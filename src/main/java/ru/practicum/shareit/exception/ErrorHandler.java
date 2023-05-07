@@ -25,6 +25,7 @@ public class ErrorHandler {
         log.warn("Ошибка запроса: {}", ex.getMessage());
         return Map.of("Ошибка запроса", ex.getMessage());
     }
+
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, String> handleValidationEx(final MethodArgumentNotValidException ex) {

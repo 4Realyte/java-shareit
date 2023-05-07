@@ -9,15 +9,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Repository
 @RequiredArgsConstructor
 public class ItemDaoImpl implements ItemDao {
     private final Map<Long, Item> items = new HashMap<>();
-    private static long ITEM_COUNTER = 0;
+    private final AtomicInteger counter = new AtomicInteger();
 
     public Item save(Item item) {
-        item.setId(++ITEM_COUNTER);
+        item.setId(counter.incrementAndGet());
         items.put(item.getId(), item);
         return item;
     }

@@ -9,11 +9,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Repository
 @RequiredArgsConstructor
 public class UserDaoImpl implements UserDao {
-    private static long USER_COUNTER = 0;
+    private final AtomicInteger counter = new AtomicInteger();
     private final Map<Long, User> users = new HashMap<>();
 
     @Override
@@ -23,7 +24,7 @@ public class UserDaoImpl implements UserDao {
 
     @Override
     public User save(User user) {
-        user.setId(++USER_COUNTER);
+        user.setId(counter.incrementAndGet());
         users.put(user.getId(), user);
 
         return user;
