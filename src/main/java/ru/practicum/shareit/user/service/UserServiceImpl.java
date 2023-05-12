@@ -9,7 +9,6 @@ import ru.practicum.shareit.user.dto.UserMapper;
 import ru.practicum.shareit.user.model.User;
 
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,9 +31,9 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDto updateUser(Map<String, String> updates, Long id) {
-        String email = updates.get("email");
-        String name = updates.get("name");
+    public UserDto updateUser(UserDto userDto, Long id) {
+        String email = userDto.getEmail();
+        String name = userDto.getName();
 
         User user = userDao.findById(id);
 

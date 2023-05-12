@@ -12,7 +12,6 @@ import ru.practicum.shareit.user.model.User;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,15 +27,15 @@ public class ItemServiceImpl implements ItemService {
         return ItemMapper.itemToDto(itemDao.save(item));
     }
 
-    public ItemDto updateItem(Map<String, Object> updates, Long ownerId) {
+    public ItemDto updateItem(ItemDto itemDto, Long ownerId) {
         User owner = userDao.findById(ownerId);
-        Long itemId = (Long) updates.get("id");
+        Long itemId = itemDto.getId();
         Item item = itemDao.findById(itemId);
 
         checkOwner(item, ownerId);
 
         item.setOwner(owner);
-        setAttributes(updates, item);
+        setAttributes(itemDto, item);
 
         return ItemMapper.itemToDto(itemDao.update(item));
     }
@@ -60,7 +59,7 @@ public class ItemServiceImpl implements ItemService {
         String textToSearch = text.toLowerCase().trim();
         userDao.findById(userId);
         return itemDao.findAll().stream()
-                .filter(item -> item.getAvailable() == true)
+                .filter(Item::getAvailable)
                 .filter(item -> item.getName().toLowerCase().contains(textToSearch)
                         || item.getDescription().toLowerCase().contains(textToSearch))
                 .map(ItemMapper::itemToDto)
@@ -75,10 +74,10 @@ public class ItemServiceImpl implements ItemService {
         }
     }
 
-    private void setAttributes(Map<String, Object> updates, Item item) {
-        String name = (String) updates.get("name");
-        String description = (String) updates.get("description");
-        Boolean available = (Boolean) updates.get("available");
+    private void setAttributes(ItemDto itemDto, Item item) {
+        String name = itemDto.getName();
+        String description = itemDto.getDescription();
+        Boolean available = itemDto.getAvailable();
         if (name != null) {
             item.setName(name);
         }
