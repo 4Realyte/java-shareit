@@ -1,14 +1,13 @@
 package ru.practicum.shareit.item;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.service.ItemService;
 
-import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import java.util.List;
-import java.util.Map;
 
 /**
  * TODO Sprint add-controllers.
@@ -20,15 +19,15 @@ public class ItemController {
     private final ItemService itemServiceImpl;
 
     @PostMapping
-    public ItemDto addItem(@RequestBody @Valid ItemDto itemDto, @RequestHeader("X-Sharer-User-Id") @NotNull Long ownerId) {
+    public ItemDto addItem(@RequestBody @Validated(ItemDto.NewItem.class) ItemDto itemDto, @RequestHeader("X-Sharer-User-Id") @NotNull Long ownerId) {
         return itemServiceImpl.addNewItem(itemDto, ownerId);
     }
 
     @PatchMapping("/{id}")
-    public ItemDto updateItem(@RequestBody Map<String, Object> updates, @RequestHeader("X-Sharer-User-Id")
+    public ItemDto updateItem(@Validated(ItemDto.UpdateItem.class) @RequestBody ItemDto itemDto, @RequestHeader("X-Sharer-User-Id")
     @NotNull Long ownerId, @PathVariable("id") Long itemId) {
-        updates.put("id", itemId);
-        return itemServiceImpl.updateItem(updates, ownerId);
+        itemDto.setId(itemId);
+        return itemServiceImpl.updateItem(itemDto, ownerId);
     }
 
     @GetMapping("/{id}")

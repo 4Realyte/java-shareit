@@ -2,55 +2,64 @@ package ru.practicum.shareit.item.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.shareit.exception.ItemNotFoundException;
 import ru.practicum.shareit.exception.ItemUpdatingException;
-import ru.practicum.shareit.item.dao.ItemDao;
+import ru.practicum.shareit.exception.UserNotFoundException;
+import ru.practicum.shareit.item.dao.ItemRepository;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemMapper;
 import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.user.dao.UserDao;
+import ru.practicum.shareit.user.dao.UserRepository;
 import ru.practicum.shareit.user.model.User;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ItemServiceImpl implements ItemService {
-    private final ItemDao itemDao;
-    private final UserDao userDao;
+    private final ItemRepository itemRepository;
+    private final UserRepository userRepository;
 
+    @Transactional
     public ItemDto addNewItem(ItemDto itemDto, Long ownerId) {
-        User owner = userDao.findById(ownerId);
-        Item item = ItemMapper.dtoToItem(itemDto);
-        item.setOwner(owner);
-        return ItemMapper.itemToDto(itemDao.save(item));
+        User owner = userRepository.findById(ownerId).orElseThrow(() -> new UserNotFoundException(
+                String.format("Пользователь с id: %s не обнаружен", ownerId)));
+        Item item = ItemMapper.dtoToItem(itemDto, owner);
+        return ItemMapper.itemToDto(itemRepository.save(item));
     }
 
-    public ItemDto updateItem(Map<String, Object> updates, Long ownerId) {
-        User owner = userDao.findById(ownerId);
-        Long itemId = (Long) updates.get("id");
-        Item item = itemDao.findById(itemId);
+    @Transactional
+    public ItemDto updateItem(ItemDto itemDto, Long ownerId) {
+        User owner = userRepository.findById(ownerId)
+                .orElseThrow(() -> new UserNotFoundException(String.format("Пользователь с id: %s не обнаружен", ownerId)));
+        Long itemId = itemDto.getId();
+
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new ItemNotFoundException(String.format("Вещь с id: %s не обнаружена", itemId)));
 
         checkOwner(item, ownerId);
 
         item.setOwner(owner);
-        setAttributes(updates, item);
+        setAttributes(itemDto, item);
 
-        return ItemMapper.itemToDto(itemDao.update(item));
+        return ItemMapper.itemToDto(itemRepository.save(item));
     }
 
     public ItemDto getItemById(Long userId, Long itemId) {
-        userDao.findById(userId);
-        return ItemMapper.itemToDto(itemDao.findById(itemId));
+        userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(
+                        String.format("Пользователь с id: %s не обнаружен", userId)));
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new ItemNotFoundException(String.format("Вещь с id: %s не обнаружена", itemId)));
+
+        return ItemMapper.itemToDto(item);
     }
 
     public List<ItemDto> getItemsByOwner(Long ownerId) {
-        return itemDao.findAll().stream()
-                .filter(item -> item.getOwner().getId() == ownerId)
-                .map(ItemMapper::itemToDto)
-                .collect(Collectors.toList());
+        return ItemMapper.itemToDto(itemRepository.findItemsByOwnerId(ownerId));
     }
 
     public List<ItemDto> search(String text, Long userId) {
@@ -58,13 +67,9 @@ public class ItemServiceImpl implements ItemService {
             return Collections.emptyList();
         }
         String textToSearch = text.toLowerCase().trim();
-        userDao.findById(userId);
-        return itemDao.findAll().stream()
-                .filter(item -> item.getAvailable() == true)
-                .filter(item -> item.getName().toLowerCase().contains(textToSearch)
-                        || item.getDescription().toLowerCase().contains(textToSearch))
-                .map(ItemMapper::itemToDto)
-                .collect(Collectors.toList());
+        userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(
+                String.format("Пользователь с id: %s не обнаружен", userId)));
+        return ItemMapper.itemToDto(itemRepository.searchItemsByNameOrDescription(textToSearch));
     }
 
     private void checkOwner(Item item, Long ownerId) {
@@ -75,10 +80,10 @@ public class ItemServiceImpl implements ItemService {
         }
     }
 
-    private void setAttributes(Map<String, Object> updates, Item item) {
-        String name = (String) updates.get("name");
-        String description = (String) updates.get("description");
-        Boolean available = (Boolean) updates.get("available");
+    private void setAttributes(ItemDto itemDto, Item item) {
+        String name = itemDto.getName();
+        String description = itemDto.getDescription();
+        Boolean available = itemDto.getAvailable();
         if (name != null) {
             item.setName(name);
         }

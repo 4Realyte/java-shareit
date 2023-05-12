@@ -5,18 +5,23 @@ import lombok.Data;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Null;
 
-/**
- * TODO Sprint add-controllers.
- */
 @Data
 @Builder
 public class ItemDto {
-    private long id;
-    @NotBlank(message = "Имя вещи не может быть пустым")
+    public interface NewItem {
+    }
+
+    public interface UpdateItem {
+    }
+
+    @Null(groups = {NewItem.class})
+    private Long id;
+    @NotBlank(message = "Имя вещи не может быть пустым", groups = {NewItem.class})
     private String name;
-    @NotBlank(message = "Поле описания не должно быть пустым")
+    @NotBlank(message = "Поле описания не должно быть пустым", groups = {NewItem.class})
     private String description;
-    @NotNull(message = "Поле доступность к аренде должно присутствовать")
+    @NotNull(message = "Поле доступность к аренде должно присутствовать", groups = {NewItem.class})
     private Boolean available;
 }
