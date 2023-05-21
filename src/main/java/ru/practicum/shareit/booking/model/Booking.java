@@ -1,9 +1,6 @@
 package ru.practicum.shareit.booking.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.extern.jackson.Jacksonized;
 import ru.practicum.shareit.booking.BookingStatus;
 import ru.practicum.shareit.item.model.Item;
@@ -31,8 +28,10 @@ public class Booking {
     @Column(name = "end_date")
     private LocalDate endDate;
     @OneToOne
+    @ToString.Exclude
     private Item item;
     @ManyToOne(fetch = FetchType.LAZY)
+    @ToString.Exclude
     private User booker;
     @Builder.Default
     @Enumerated(EnumType.STRING)
