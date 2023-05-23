@@ -12,14 +12,15 @@ import java.util.Map;
 @RestControllerAdvice(basePackages = "ru.practicum.shareit")
 @Slf4j
 public class ErrorHandler {
-    @ExceptionHandler({EmailHasDuplicateException.class})
-    @ResponseStatus(HttpStatus.CONFLICT)
+    @ExceptionHandler({ItemNotAvailableException.class})
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, String> handle(final RuntimeException ex) {
         log.warn("Ошибка запроса: {}", ex.getMessage());
         return Map.of("Ошибка запроса", ex.getMessage());
     }
 
-    @ExceptionHandler({UserNotFoundException.class, ItemNotFoundException.class,ItemUpdatingException.class})
+    @ExceptionHandler({UserNotFoundException.class, ItemNotFoundException.class,
+            ItemUpdatingException.class, BookingNotFoundException.class})
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public Map<String, String> handleNotFoundException(final RuntimeException ex) {
         log.warn("Ошибка запроса: {}", ex.getMessage());
