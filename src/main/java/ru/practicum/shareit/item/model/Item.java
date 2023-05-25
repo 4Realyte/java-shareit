@@ -11,6 +11,7 @@ import javax.persistence.*;
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
+@Table(name = "items")
 public class Item {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -18,7 +19,7 @@ public class Item {
     private String name;
     private String description;
     private Boolean available;
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @ToString.Exclude
     private User owner;
     @OneToOne

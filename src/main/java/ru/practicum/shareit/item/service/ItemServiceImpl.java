@@ -66,10 +66,9 @@ public class ItemServiceImpl implements ItemService {
         if (text.isBlank()) {
             return Collections.emptyList();
         }
-        String textToSearch = text.toLowerCase().trim();
         userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(
                 String.format("Пользователь с id: %s не обнаружен", userId)));
-        return ItemMapper.itemToDto(itemRepository.searchItemsByNameOrDescription(textToSearch));
+        return ItemMapper.itemToDto(itemRepository.searchItemsByNameOrDescription(text));
     }
 
     private void checkOwner(Item item, Long ownerId) {

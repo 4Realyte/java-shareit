@@ -10,8 +10,8 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
     List<Item> findItemsByOwnerId(Long ownerId);
 
     @Query("select i from Item as i " +
-            "where (LCASE(i.name) LIKE concat('%',?1, '%') " +
-            "or LCASE(i.description) like concat('%',?1, '%')) " +
+            "where (LCASE(i.name) LIKE LCASE(concat('%',?1, '%')) " +
+            "or LCASE(i.description) like LCASE(concat('%',?1, '%'))) " +
             "AND i.available = true")
     List<Item> searchItemsByNameOrDescription(String text);
 }

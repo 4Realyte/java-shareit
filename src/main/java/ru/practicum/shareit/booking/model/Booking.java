@@ -6,7 +6,7 @@ import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.model.User;
 
 import javax.persistence.*;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * TODO Sprint add-bookings.
@@ -16,19 +16,19 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "booking")
+@Table(name = "bookings")
 public class Booking {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column(name = "start_date")
-    private LocalDate startDate;
+    private LocalDateTime startDate;
     @Column(name = "end_date")
-    private LocalDate endDate;
-    @ManyToOne(fetch = FetchType.LAZY)
+    private LocalDateTime endDate;
+    @ManyToOne
     @ToString.Exclude
     private Item item;
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @ToString.Exclude
     private User booker;
     @Enumerated(EnumType.STRING)

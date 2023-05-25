@@ -5,9 +5,12 @@ import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.model.User;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class BookingMapper {
-    public static BookingDto toBookingDto(Booking booking) {
-        return BookingDto.builder()
+    public static BookingRequestDto toBookingRequestDto(Booking booking) {
+        return BookingRequestDto.builder()
                 .id(booking.getId())
                 .startDate(booking.getStartDate())
                 .endDate(booking.getEndDate())
@@ -16,14 +19,14 @@ public class BookingMapper {
                 .build();
     }
 
-    public static Booking dtoToBooking(BookingDto bookingDto, Item item, User user) {
+    public static Booking dtoToBooking(BookingRequestDto bookingRequestDto, Item item, User user) {
         return Booking.builder()
-                .id(bookingDto.getId())
-                .startDate(bookingDto.getStartDate())
-                .endDate(bookingDto.getEndDate())
+                .id(bookingRequestDto.getId())
+                .startDate(bookingRequestDto.getStartDate())
+                .endDate(bookingRequestDto.getEndDate())
                 .item(item)
                 .booker(user)
-                .status(bookingDto.getStatus() != null ? bookingDto.getStatus() : BookingStatus.WAITING)
+                .status(bookingRequestDto.getStatus() != null ? bookingRequestDto.getStatus() : BookingStatus.WAITING)
                 .build();
     }
 
@@ -36,5 +39,13 @@ public class BookingMapper {
                 .booker(booking.getBooker())
                 .status(booking.getStatus())
                 .build();
+    }
+
+    public static List<BookingResponseDto> toResponseDto(Iterable<Booking> bookings) {
+        List<BookingResponseDto> dtos = new ArrayList<>();
+        for (Booking booking : bookings) {
+            dtos.add(toResponseDto(booking));
+        }
+        return dtos;
     }
 }

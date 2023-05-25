@@ -1,30 +1,40 @@
 package ru.practicum.shareit.booking.service;
 
+import com.querydsl.core.types.ExpressionUtils;
+import com.querydsl.core.types.Predicate;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.BookingStatus;
+import ru.practicum.shareit.booking.State;
 import ru.practicum.shareit.booking.dao.BookingRepository;
-import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.BookingMapper;
+import ru.practicum.shareit.booking.dto.BookingRequestDto;
 import ru.practicum.shareit.booking.dto.BookingResponseDto;
 import ru.practicum.shareit.booking.model.Booking;
-import ru.practicum.shareit.exception.BookingNotFoundException;
-import ru.practicum.shareit.exception.ItemNotAvailableException;
-import ru.practicum.shareit.exception.ItemNotFoundException;
-import ru.practicum.shareit.exception.UserNotFoundException;
+import ru.practicum.shareit.exception.*;
 import ru.practicum.shareit.item.dao.ItemRepository;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.dao.UserRepository;
 import ru.practicum.shareit.user.model.User;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+import static ru.practicum.shareit.booking.model.QBooking.booking;
+
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class BookingService {
     private final BookingRepository bookingRepository;
     private final ItemRepository itemRepository;
     private final UserRepository userRepository;
 
-    public BookingDto addBooking(BookingDto dto, Long userId) {
+    @Transactional
+    public BookingResponseDto addBooking(BookingRequestDto dto, Long userId) {
         Item item = itemRepository.findById(dto.getItemId()).orElseThrow(() ->
                 new ItemNotFoundException(String.format("Вещь с id: %s не обнаружена", dto.getItemId())));
 
@@ -36,7 +46,7 @@ public class BookingService {
                 new UserNotFoundException(String.format("Пользователь с id: %s не обнаружен", userId)));
         Booking booking = BookingMapper.dtoToBooking(dto, item, user);
 
-        return BookingMapper.toBookingDto(bookingRepository.save(booking));
+        return BookingMapper.toResponseDto(bookingRepository.save(booking));
     }
 
     public BookingResponseDto getBookingById(Long bookingId, Long userId) {
@@ -45,6 +55,7 @@ public class BookingService {
         return BookingMapper.toResponseDto(booking);
     }
 
+    @Transactional
     public BookingResponseDto approveBooking(Long bookingId, Boolean approved, Long ownerId) {
         Booking booking = bookingRepository.findBookingByOwner(bookingId, ownerId)
                 .orElseThrow(() -> new BookingNotFoundException(
@@ -55,5 +66,44 @@ public class BookingService {
             booking.setStatus(BookingStatus.REJECTED);
         }
         return BookingMapper.toResponseDto(bookingRepository.save(booking));
+    }
+
+    public List<BookingResponseDto> getAllUserBookings(State state, Long userId, boolean owner) {
+        List<Predicate> predicates = new ArrayList<>();
+        LocalDateTime curTime = LocalDateTime.now();
+        if (owner) {
+            predicates.add(booking.item.owner.id.eq(userId));
+        } else {
+            predicates.add(booking.booker.id.eq(userId));
+        }
+        switch (state) {
+            case ALL:
+                break;
+            case FUTURE:
+                predicates.add(booking.startDate.after(curTime));
+                break;
+            case PAST:
+                predicates.add(booking.endDate.before(curTime));
+                break;
+            case CURRENT:
+                predicates.add(booking.startDate.loe(curTime)
+                        .and(booking.endDate.gt(curTime)));
+                break;
+            case REJECTED:
+                predicates.add(booking.status.eq(BookingStatus.REJECTED));
+                break;
+            case WAITING:
+                predicates.add(booking.status.eq(BookingStatus.WAITING));
+            default:
+                throw new UnknownStateException(State.UNSUPPORTED_STATUS.name());
+        }
+        List<BookingResponseDto> dtos = BookingMapper.toResponseDto(
+                bookingRepository.findAll(ExpressionUtils.allOf(predicates),
+                        Sort.by(Sort.Direction.DESC, "startDate")));
+
+        if (dtos.isEmpty())
+            throw new BookingNotFoundException(String.format("Пользователь с id : %s не имеет брони", userId));
+
+        return dtos;
     }
 }

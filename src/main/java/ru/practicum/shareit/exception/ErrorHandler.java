@@ -19,6 +19,12 @@ public class ErrorHandler {
         return Map.of("Ошибка запроса", ex.getMessage());
     }
 
+    @ExceptionHandler(UnknownStateException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, String> handleUnsupportedEx(final RuntimeException ex) {
+        return Map.of("Unknown state", ex.getMessage());
+    }
+
     @ExceptionHandler({UserNotFoundException.class, ItemNotFoundException.class,
             ItemUpdatingException.class, BookingNotFoundException.class})
     @ResponseStatus(HttpStatus.NOT_FOUND)
