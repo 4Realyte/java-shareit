@@ -41,6 +41,13 @@ public class BookingMapper {
                 .build();
     }
 
+    public static BookingShortDto toShortDto(Booking booking) {
+        return BookingShortDto.builder()
+                .id(booking.getId())
+                .bookerId(booking.getBooker().getId())
+                .build();
+    }
+
     public static List<BookingResponseDto> toResponseDto(Iterable<Booking> bookings) {
         List<BookingResponseDto> dtos = new ArrayList<>();
         for (Booking booking : bookings) {

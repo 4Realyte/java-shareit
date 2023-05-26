@@ -5,6 +5,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemResponseDto;
+import ru.practicum.shareit.item.dto.ItemShortResponseDto;
 import ru.practicum.shareit.item.service.ItemService;
 
 import javax.validation.constraints.NotNull;
@@ -32,7 +33,7 @@ public class ItemController {
     }
 
     @GetMapping("/{id}")
-    public ItemResponseDto getItemById(@RequestHeader("X-Sharer-User-Id") @NotNull Long userId, @PathVariable("id") Long itemId) {
+    public ItemShortResponseDto getItemById(@RequestHeader("X-Sharer-User-Id") @NotNull Long userId, @PathVariable("id") Long itemId) {
         return itemServiceImpl.getItemById(userId, itemId);
     }
 
