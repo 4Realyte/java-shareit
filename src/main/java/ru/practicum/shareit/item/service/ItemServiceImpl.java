@@ -3,18 +3,22 @@ package ru.practicum.shareit.item.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.shareit.booking.dao.BookingRepository;
+import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.exception.ItemNotFoundException;
 import ru.practicum.shareit.exception.ItemUpdatingException;
 import ru.practicum.shareit.exception.UserNotFoundException;
 import ru.practicum.shareit.item.dao.ItemRepository;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemMapper;
+import ru.practicum.shareit.item.dto.ItemResponseDto;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.dao.UserRepository;
 import ru.practicum.shareit.user.model.User;
 
-import java.util.Collections;
-import java.util.List;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +26,7 @@ import java.util.List;
 public class ItemServiceImpl implements ItemService {
     private final ItemRepository itemRepository;
     private final UserRepository userRepository;
+    private final BookingRepository bookingRepository;
 
     @Transactional
     public ItemDto addNewItem(ItemDto itemDto, Long ownerId) {
@@ -48,18 +53,50 @@ public class ItemServiceImpl implements ItemService {
         return ItemMapper.itemToDto(itemRepository.save(item));
     }
 
-    public ItemDto getItemById(Long userId, Long itemId) {
+    public ItemResponseDto getItemById(Long userId, Long itemId) {
         userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(
                         String.format("Пользователь с id: %s не обнаружен", userId)));
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new ItemNotFoundException(String.format("Вещь с id: %s не обнаружена", itemId)));
+        LocalDateTime cur = LocalDateTime.now();
+        Booking nextBooking = bookingRepository.findNextBookingByItemId(itemId, cur).orElse(null);
+        Booking lastBooking = bookingRepository.findLastBookingByItemId(itemId, cur).orElse(null);
 
-        return ItemMapper.itemToDto(item);
+        return ItemMapper.toItemResponseDto(item, nextBooking, lastBooking);
     }
 
-    public List<ItemDto> getItemsByOwner(Long ownerId) {
-        return ItemMapper.itemToDto(itemRepository.findItemsByOwnerId(ownerId));
+    public List<ItemResponseDto> getItemsByOwner(Long ownerId) {
+        List<Item> items = itemRepository.findItemsByOwnerId(ownerId);
+        List<Long> ids = items.stream().map(Item::getId).collect(Collectors.toList());
+
+        List<Booking> bookings = bookingRepository.findAllByItem_IdIn(ids);
+        if (!bookings.isEmpty()) {
+            return getItemsWithBooking(bookings, items);
+        } else {
+            return ItemMapper.toItemResponseDto(items);
+        }
+    }
+
+    private List<ItemResponseDto> getItemsWithBooking(List<Booking> bookings, List<Item> items) {
+        Map<Long, List<Booking>> map = bookings.stream().collect(Collectors.groupingBy(b -> b.getItem().getId()));
+        LocalDateTime current = LocalDateTime.now();
+
+        List<ItemResponseDto> result = new ArrayList<>();
+        for (Item item : items) {
+            Booking nextBooking = map.get(item.getId()).stream()
+                    .filter(b -> b.getStartDate().isAfter(current))
+                    .sorted(Comparator.comparing(Booking::getStartDate, Comparator.naturalOrder()))
+                    .findFirst().orElse(null);
+
+            Booking lastBooking = map.get(item.getId()).stream()
+                    .filter(b -> b.getEndDate().isBefore(current) || b.getEndDate().isEqual(current))
+                    .sorted(Comparator.comparing(Booking::getEndDate, Comparator.reverseOrder()))
+                    .findFirst().orElse(null);
+
+            result.add(ItemMapper.toItemResponseDto(item, nextBooking, lastBooking));
+        }
+        return result;
     }
 
     public List<ItemDto> search(String text, Long userId) {

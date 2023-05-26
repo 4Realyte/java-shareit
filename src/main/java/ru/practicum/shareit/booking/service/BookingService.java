@@ -4,8 +4,10 @@ import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 import ru.practicum.shareit.booking.BookingStatus;
 import ru.practicum.shareit.booking.State;
 import ru.practicum.shareit.booking.dao.BookingRepository;
@@ -39,11 +41,13 @@ public class BookingService {
                 new ItemNotFoundException(String.format("Вещь с id: %s не обнаружена", dto.getItemId())));
 
         if (!item.getAvailable()) {
-            throw new ItemNotAvailableException(String.format("Вещь с id: %s не доступна для брони", item.getId()));
+            throw new ItemNotAvailableException(String.format("Вещь с id: %s недоступна для брони", item.getId()));
         }
-
         User user = userRepository.findById(userId).orElseThrow(() ->
                 new UserNotFoundException(String.format("Пользователь с id: %s не обнаружен", userId)));
+        if (item.getOwner().equals(user)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Бронь для владельца вещи недоступна");
+        }
         Booking booking = BookingMapper.dtoToBooking(dto, item, user);
 
         return BookingMapper.toResponseDto(bookingRepository.save(booking));
@@ -60,12 +64,21 @@ public class BookingService {
         Booking booking = bookingRepository.findBookingByOwner(bookingId, ownerId)
                 .orElseThrow(() -> new BookingNotFoundException(
                         String.format("Бронь с id: %s для владельца с id: %s не обнаружена", bookingId, ownerId)));
+        checkAlreadyApproved(booking);
         if (approved) {
             booking.setStatus(BookingStatus.APPROVED);
         } else {
             booking.setStatus(BookingStatus.REJECTED);
         }
         return BookingMapper.toResponseDto(bookingRepository.save(booking));
+    }
+
+    private void checkAlreadyApproved(Booking booking) {
+        BookingStatus status = booking.getStatus();
+        if (booking.getStatus() != null && (status == BookingStatus.APPROVED || status == BookingStatus.REJECTED)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Невозможно изменить статус аренды после подтверждения");
+        }
     }
 
     public List<BookingResponseDto> getAllUserBookings(State state, Long userId, boolean owner) {
@@ -94,6 +107,7 @@ public class BookingService {
                 break;
             case WAITING:
                 predicates.add(booking.status.eq(BookingStatus.WAITING));
+                break;
             default:
                 throw new UnknownStateException(State.UNSUPPORTED_STATUS.name());
         }
