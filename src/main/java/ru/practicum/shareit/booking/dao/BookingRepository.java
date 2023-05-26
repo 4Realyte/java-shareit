@@ -6,7 +6,6 @@ import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 import org.springframework.data.repository.query.Param;
 import ru.practicum.shareit.booking.model.Booking;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,19 +32,19 @@ public interface BookingRepository extends JpaRepository<Booking, Long>, Queryds
     @Query(value = "SELECT * FROM bookings as bk " +
             "JOIN items as i ON bk.item_id=i.id " +
             "JOIN users as u ON bk.booker_id=u.id " +
-            "WHERE bk.item_id=(:id) AND bk.end_date <= :cur " +
+            "WHERE bk.item_id=(:id) AND bk.end_date < now() " +
             "ORDER BY bk.end_date DESC " +
             "LIMIT 1", nativeQuery = true)
-    Optional<Booking> findLastBookingByItemId(@Param("id") Long id, @Param("cur") LocalDateTime cur);
+    Optional<Booking> findLastBookingByItemId(@Param("id") Long id);
 
 
     @Query(value = "SELECT * FROM bookings as bk " +
             "JOIN items as i ON bk.item_id=i.id " +
             "JOIN users as u ON bk.booker_id=u.id " +
-            "WHERE bk.item_id=(:id) AND bk.start_date > :cur " +
+            "WHERE bk.item_id=(:id) AND bk.start_date > now() " +
             "ORDER BY bk.start_date ASC " +
             "LIMIT 1", nativeQuery = true)
-    Optional<Booking> findNextBookingByItemId(@Param("id") Long id, @Param("cur") LocalDateTime cur);
+    Optional<Booking> findNextBookingByItemId(@Param("id") Long id);
 
     List<Booking> findAllByItem_IdIn(List<Long> ids);
 }

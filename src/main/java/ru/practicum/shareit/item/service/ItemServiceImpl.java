@@ -57,47 +57,45 @@ public class ItemServiceImpl implements ItemService {
     }
 
     public ItemShortResponseDto getItemById(Long userId, Long itemId) {
-        LocalDateTime cur = LocalDateTime.now();
-        BookingShortDto nextBooking = bookingRepository.findNextBookingByItemId(itemId, cur)
-                .map(BookingMapper::toShortDto).orElse(null);
-        BookingShortDto lastBooking = bookingRepository.findLastBookingByItemId(itemId, cur)
-                .map(BookingMapper::toShortDto).orElse(null);
         userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(
                         String.format("Пользователь с id: %s не обнаружен", userId)));
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new ItemNotFoundException(String.format("Вещь с id: %s не обнаружена", itemId)));
-
-
-
+        LocalDateTime cur = LocalDateTime.now();
+        BookingShortDto nextBooking = bookingRepository.findNextBookingByItemId(itemId)
+                .map(BookingMapper::toShortDto).orElse(null);
+        BookingShortDto lastBooking = bookingRepository.findLastBookingByItemId(itemId)
+                .map(BookingMapper::toShortDto).orElse(null);
         return ItemMapper.toItemShortDto(item, nextBooking, lastBooking);
     }
 
     public List<ItemResponseDto> getItemsByOwner(Long ownerId) {
+        LocalDateTime cur = LocalDateTime.now();
         List<Item> items = itemRepository.findAllByOwner_Id(ownerId);
         List<Long> ids = items.stream().map(Item::getId).collect(Collectors.toList());
 
         List<Booking> bookings = bookingRepository.findAllByItem_IdIn(ids);
         if (!bookings.isEmpty()) {
-            return getItemsWithBooking(bookings, items);
+            return getItemsWithBooking(bookings, items, cur);
         } else {
             return ItemMapper.toItemResponseDto(items);
         }
     }
 
-    private List<ItemResponseDto> getItemsWithBooking(List<Booking> bookings, List<Item> items) {
+    private List<ItemResponseDto> getItemsWithBooking(List<Booking> bookings, List<Item> items, LocalDateTime cur) {
         Map<Long, List<Booking>> map = bookings.stream().collect(Collectors.groupingBy(b -> b.getItem().getId()));
         LocalDateTime current = LocalDateTime.now();
 
         List<ItemResponseDto> result = new ArrayList<>();
         for (Item item : items) {
-            Booking nextBooking = map.get(item.getId()).stream()
-                    .filter(b -> b.getStartDate().isAfter(current))
+            Booking nextBooking = map.getOrDefault(item.getId(),Collections.emptyList()).stream()
+                    .filter(b -> b.getStartDate().isAfter(cur))
                     .sorted(Comparator.comparing(Booking::getStartDate, Comparator.naturalOrder()))
                     .findFirst().orElse(null);
 
-            Booking lastBooking = map.get(item.getId()).stream()
-                    .filter(b -> b.getEndDate().isBefore(current) || b.getEndDate().isEqual(current))
+            Booking lastBooking = map.getOrDefault(item.getId(), Collections.emptyList()).stream()
+                    .filter(b -> b.getEndDate().isBefore(cur))
                     .sorted(Comparator.comparing(Booking::getEndDate, Comparator.reverseOrder()))
                     .findFirst().orElse(null);
 
