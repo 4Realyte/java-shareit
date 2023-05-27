@@ -6,26 +6,33 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class UserMapper {
-    public static UserDto userToDto(User user) {
-        return UserDto.builder()
+    public static UserRequestDto userToDto(User user) {
+        return UserRequestDto.builder()
                 .id(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
                 .build();
     }
 
-    public static List<UserDto> userToDto(Iterable<User> users) {
-        List<UserDto> dtos = new ArrayList<>();
+    public static List<UserRequestDto> userToDto(Iterable<User> users) {
+        List<UserRequestDto> dtos = new ArrayList<>();
         for (User user : users) {
             dtos.add(userToDto(user));
         }
         return dtos;
     }
 
-    public static User dtoToUser(UserDto userDto) {
+    public static UserShortResponseDto toUserShort(User user) {
+        return UserShortResponseDto.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .build();
+    }
+
+    public static User dtoToUser(UserRequestDto userRequestDto) {
         return User.builder()
-                .name(userDto.getName())
-                .email(userDto.getEmail())
+                .name(userRequestDto.getName())
+                .email(userRequestDto.getEmail())
                 .build();
     }
 }

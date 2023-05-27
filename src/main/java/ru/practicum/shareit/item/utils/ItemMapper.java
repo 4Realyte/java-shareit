@@ -4,7 +4,7 @@ import ru.practicum.shareit.booking.dto.BookingShortDto;
 import ru.practicum.shareit.item.dto.CommentResponseDto;
 import ru.practicum.shareit.item.dto.ItemRequestDto;
 import ru.practicum.shareit.item.dto.ItemResponseDto;
-import ru.practicum.shareit.item.dto.ItemShortResponseDto;
+import ru.practicum.shareit.item.dto.ItemShortDto;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.model.User;
 
@@ -30,8 +30,8 @@ public class ItemMapper {
         return dtos;
     }
 
-    public static ItemResponseDto toItemResponseDto(Item item) {
-        return ItemResponseDto.builder()
+    public static ItemShortDto toItemShort(Item item) {
+        return ItemShortDto.builder()
                 .id(item.getId())
                 .name(item.getName())
                 .description(item.getDescription())
@@ -39,8 +39,8 @@ public class ItemMapper {
                 .build();
     }
 
-    public static ItemShortResponseDto toItemShortDto(Item item, BookingShortDto next, BookingShortDto last) {
-        return ItemShortResponseDto.builder()
+    public static ItemResponseDto toItemResponseDto(Item item, BookingShortDto next, BookingShortDto last) {
+        return ItemResponseDto.builder()
                 .id(item.getId())
                 .name(item.getName())
                 .description(item.getDescription())
@@ -50,11 +50,11 @@ public class ItemMapper {
                 .build();
     }
 
-    public static ItemShortResponseDto toItemShortDto(Item item,
-                                                      BookingShortDto next,
-                                                      BookingShortDto last,
-                                                      List<CommentResponseDto> comments) {
-        return ItemShortResponseDto.builder()
+    public static ItemResponseDto toItemResponseDto(Item item,
+                                                    BookingShortDto next,
+                                                    BookingShortDto last,
+                                                    List<CommentResponseDto> comments) {
+        return ItemResponseDto.builder()
                 .id(item.getId())
                 .name(item.getName())
                 .description(item.getDescription())
@@ -65,10 +65,10 @@ public class ItemMapper {
                 .build();
     }
 
-    public static List<ItemShortResponseDto> toItemShortDto(List<Item> items) {
-        List<ItemShortResponseDto> dtos = new ArrayList<>();
+    public static List<ItemResponseDto> toItemResponseDto(List<Item> items) {
+        List<ItemResponseDto> dtos = new ArrayList<>();
         for (Item item : items) {
-            dtos.add(toItemShortDto(item, null, null));
+            dtos.add(toItemResponseDto(item, null, null));
         }
         return dtos;
     }
