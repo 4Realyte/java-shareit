@@ -73,10 +73,13 @@ public class ItemServiceImpl implements ItemService {
         BookingShortDto lastBooking = bookingRepository.findLastBookingByItemId(itemId, cur)
                 .map(BookingMapper::toShortDto).orElse(null);
 
+        List<CommentResponseDto> comments = CommentMapper.toResponseDto(
+                commentRepository.findAllByItem_IdOrderByCreatedDesc(itemId));
+
         if (user.equals(item.getOwner())) {
-            return ItemMapper.toItemShortDto(item, nextBooking, lastBooking);
+            return ItemMapper.toItemShortDto(item, nextBooking, lastBooking, comments);
         } else {
-            return ItemMapper.toItemShortDto(item, null, null);
+            return ItemMapper.toItemShortDto(item, null, null, comments);
         }
     }
 
@@ -86,31 +89,35 @@ public class ItemServiceImpl implements ItemService {
         List<Long> ids = items.stream().map(Item::getId).collect(Collectors.toList());
 
         List<Booking> bookings = bookingRepository.findAllByItem_IdIn(ids);
+        List<Comment> comments = commentRepository.findAllByItemIdIn(ids);
         if (!bookings.isEmpty()) {
-            return getItemsWithBooking(bookings, items, cur);
+            return connectBookingsAndComments(bookings, items, comments, cur);
         } else {
             return ItemMapper.toItemShortDto(items);
         }
     }
 
-    private List<ItemShortResponseDto> getItemsWithBooking(List<Booking> bookings, List<Item> items, LocalDateTime cur) {
-        Map<Long, List<Booking>> map = bookings.stream().collect(Collectors.groupingBy(b -> b.getItem().getId()));
-
+    private List<ItemShortResponseDto> connectBookingsAndComments(List<Booking> bookings, List<Item> items,
+                                                                  List<Comment> comments, LocalDateTime cur) {
+        Map<Long, List<Booking>> bookingMap = bookings.stream().collect(Collectors.groupingBy(b -> b.getItem().getId()));
+        Map<Long, List<Comment>> commentMap = comments.stream().collect(Collectors.groupingBy(c -> c.getItem().getId()));
         List<ItemShortResponseDto> result = new ArrayList<>();
         for (Item item : items) {
-            BookingShortDto nextBooking = map.getOrDefault(item.getId(), Collections.emptyList()).stream()
+            BookingShortDto nextBooking = bookingMap.getOrDefault(item.getId(), Collections.emptyList()).stream()
                     .filter(b -> b.getStartDate().isAfter(cur))
                     .sorted(Comparator.comparing(Booking::getStartDate, Comparator.naturalOrder()))
                     .map(BookingMapper::toShortDto)
                     .findFirst().orElse(null);
 
-            BookingShortDto lastBooking = map.getOrDefault(item.getId(), Collections.emptyList()).stream()
-                    .filter(b -> b.getEndDate().isBefore(cur))
-                    .sorted(Comparator.comparing(Booking::getEndDate, Comparator.reverseOrder()))
+            BookingShortDto lastBooking = bookingMap.getOrDefault(item.getId(), Collections.emptyList()).stream()
+                    .filter(b -> b.getStartDate().isBefore(cur))
+                    .sorted(Comparator.comparing(Booking::getStartDate, Comparator.reverseOrder()))
                     .map(BookingMapper::toShortDto)
                     .findFirst().orElse(null);
+            List<CommentResponseDto> responseComments = CommentMapper.toResponseDto(commentMap.getOrDefault(item.getId(),
+                    Collections.emptyList()));
 
-            result.add(ItemMapper.toItemShortDto(item, nextBooking, lastBooking));
+            result.add(ItemMapper.toItemShortDto(item, nextBooking, lastBooking, responseComments));
         }
         return result;
     }
@@ -126,7 +133,7 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public CommentResponseDto addComment(Long itemId, CommentRequestDto dto, Long userId) {
-        Booking booking = bookingRepository.findByBooker_IdAndItem_IdAndEndDateBefore(userId, itemId, LocalDateTime.now())
+        Booking booking = bookingRepository.findFirstByBooker_IdAndItem_IdAndEndDateBefore(userId, itemId, LocalDateTime.now())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
                         String.format("Пользователь с id: %s не брал в аренду вещь с id: %s", userId, itemId)));
 

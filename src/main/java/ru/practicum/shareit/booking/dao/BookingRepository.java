@@ -29,13 +29,15 @@ public interface BookingRepository extends JpaRepository<Booking, Long>, Queryds
             "where bk.id = ?1")
     List<Booking> findAllByBookerId(Long bookerId);
 
-    Optional<Booking> findByBooker_IdAndItem_IdAndEndDateBefore(Long bookerId, Long itemId, LocalDateTime cur);
+    Optional<Booking> findFirstByBooker_IdAndItem_IdAndEndDateBefore(Long bookerId, Long itemId, LocalDateTime cur);
 
     @Query(value = "SELECT * FROM bookings as bk " +
             "JOIN items as i ON bk.item_id=i.id " +
             "JOIN users as u ON bk.booker_id=u.id " +
-            "WHERE bk.item_id=(:id) AND bk.end_date < :cur " +
-            "ORDER BY bk.end_date DESC " +
+            "WHERE bk.item_id=(:id) " +
+            "AND bk.start_date <= :cur " +
+            "AND bk.status NOT IN('REJECTED', 'CANCELLED') " +
+            "ORDER BY bk.start_date DESC " +
             "LIMIT 1", nativeQuery = true)
     Optional<Booking> findLastBookingByItemId(@Param("id") Long id, @Param("cur") LocalDateTime cur);
 
@@ -44,6 +46,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long>, Queryds
             "JOIN items as i ON bk.item_id=i.id " +
             "JOIN users as u ON bk.booker_id=u.id " +
             "WHERE bk.item_id=(:id) AND bk.start_date > :cur " +
+            "AND bk.status NOT IN('REJECTED', 'CANCELLED') " +
             "ORDER BY bk.start_date ASC " +
             "LIMIT 1", nativeQuery = true)
     Optional<Booking> findNextBookingByItemId(@Param("id") Long id, @Param("cur") LocalDateTime cur);

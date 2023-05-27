@@ -1,6 +1,7 @@
 package ru.practicum.shareit.item.utils;
 
 import ru.practicum.shareit.booking.dto.BookingShortDto;
+import ru.practicum.shareit.item.dto.CommentResponseDto;
 import ru.practicum.shareit.item.dto.ItemRequestDto;
 import ru.practicum.shareit.item.dto.ItemResponseDto;
 import ru.practicum.shareit.item.dto.ItemShortResponseDto;
@@ -46,6 +47,21 @@ public class ItemMapper {
                 .available(item.getAvailable())
                 .nextBooking(next)
                 .lastBooking(last)
+                .build();
+    }
+
+    public static ItemShortResponseDto toItemShortDto(Item item,
+                                                      BookingShortDto next,
+                                                      BookingShortDto last,
+                                                      List<CommentResponseDto> comments) {
+        return ItemShortResponseDto.builder()
+                .id(item.getId())
+                .name(item.getName())
+                .description(item.getDescription())
+                .available(item.getAvailable())
+                .nextBooking(next)
+                .lastBooking(last)
+                .comments(comments)
                 .build();
     }
 
