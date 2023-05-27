@@ -9,7 +9,7 @@ import javax.validation.constraints.Null;
 
 @Data
 @Builder
-public class ItemDto {
+public class ItemRequestDto {
     public interface NewItem {
     }
 

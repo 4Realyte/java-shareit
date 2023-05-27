@@ -1,7 +1,9 @@
-package ru.practicum.shareit.item.dto;
+package ru.practicum.shareit.item.utils;
 
 import ru.practicum.shareit.booking.dto.BookingShortDto;
-import ru.practicum.shareit.booking.model.Booking;
+import ru.practicum.shareit.item.dto.ItemRequestDto;
+import ru.practicum.shareit.item.dto.ItemResponseDto;
+import ru.practicum.shareit.item.dto.ItemShortResponseDto;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.model.User;
 
@@ -10,8 +12,8 @@ import java.util.List;
 
 
 public class ItemMapper {
-    public static ItemDto itemToDto(Item item) {
-        return ItemDto.builder()
+    public static ItemRequestDto itemToDto(Item item) {
+        return ItemRequestDto.builder()
                 .id(item.getId())
                 .name(item.getName())
                 .description(item.getDescription())
@@ -19,22 +21,20 @@ public class ItemMapper {
                 .build();
     }
 
-    public static List<ItemDto> itemToDto(Iterable<Item> items) {
-        List<ItemDto> dtos = new ArrayList<>();
+    public static List<ItemRequestDto> itemToDto(Iterable<Item> items) {
+        List<ItemRequestDto> dtos = new ArrayList<>();
         for (Item item : items) {
             dtos.add(itemToDto(item));
         }
         return dtos;
     }
 
-    public static ItemResponseDto toItemResponseDto(Item item, Booking next, Booking last) {
+    public static ItemResponseDto toItemResponseDto(Item item) {
         return ItemResponseDto.builder()
                 .id(item.getId())
                 .name(item.getName())
                 .description(item.getDescription())
                 .available(item.getAvailable())
-                .nextBooking(next)
-                .lastBooking(last)
                 .build();
     }
 
@@ -49,19 +49,19 @@ public class ItemMapper {
                 .build();
     }
 
-    public static List<ItemResponseDto> toItemResponseDto(List<Item> items) {
-        List<ItemResponseDto> dtos = new ArrayList<>();
+    public static List<ItemShortResponseDto> toItemShortDto(List<Item> items) {
+        List<ItemShortResponseDto> dtos = new ArrayList<>();
         for (Item item : items) {
-            dtos.add(toItemResponseDto(item, null, null));
+            dtos.add(toItemShortDto(item, null, null));
         }
         return dtos;
     }
 
-    public static Item dtoToItem(ItemDto itemDto, User owner) {
+    public static Item dtoToItem(ItemRequestDto itemRequestDto, User owner) {
         return Item.builder()
-                .name(itemDto.getName())
-                .description(itemDto.getDescription())
-                .available(itemDto.getAvailable())
+                .name(itemRequestDto.getName())
+                .description(itemRequestDto.getDescription())
+                .available(itemRequestDto.getAvailable())
                 .owner(owner)
                 .build();
     }
