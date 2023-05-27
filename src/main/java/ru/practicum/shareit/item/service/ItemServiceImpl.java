@@ -152,7 +152,7 @@ public class ItemServiceImpl implements ItemService {
 
     private void checkOwner(Item item, Long ownerId) {
         User owner = item.getOwner();
-        if (owner == null || owner.getId() != ownerId) {
+        if (owner == null || !ownerId.equals(owner.getId())) {
             throw new ItemUpdatingException(
                     String.format("Пользователь с id: %s не является владельцем вещи %s", ownerId, item.getName()));
         }
