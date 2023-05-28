@@ -23,12 +23,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long>, Queryds
             "where b.id = ?1 AND i.owner.id = ?2")
     Optional<Booking> findBookingByOwner(Long bookingId, Long ownerId);
 
-    @Query("select b from Booking as b " +
-            "JOIN fetch b.booker as bk " +
-            "JOIN fetch b.item as i " +
-            "where bk.id = ?1")
-    List<Booking> findAllByBookerId(Long bookerId);
-
     Optional<Booking> findFirstByBooker_IdAndItem_IdAndEndDateBefore(Long bookerId, Long itemId, LocalDateTime cur);
 
     @Query(value = "SELECT * FROM bookings as bk " +
