@@ -9,7 +9,7 @@ import javax.validation.constraints.Null;
 
 @Data
 @Builder
-public class UserDto {
+public class UserRequestDto {
     public interface NewUser {
     }
 

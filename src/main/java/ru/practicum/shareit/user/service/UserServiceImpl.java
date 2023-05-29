@@ -2,66 +2,56 @@ package ru.practicum.shareit.user.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.practicum.shareit.exception.EmailHasDuplicateException;
-import ru.practicum.shareit.user.dao.UserDao;
-import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.exception.UserNotFoundException;
+import ru.practicum.shareit.user.dao.UserRepository;
 import ru.practicum.shareit.user.dto.UserMapper;
+import ru.practicum.shareit.user.dto.UserRequestDto;
 import ru.practicum.shareit.user.model.User;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
-    private final UserDao userDao;
+    private final UserRepository userRepository;
 
     @Override
-    public List<UserDto> getAllUsers() {
-        return userDao.findAll().stream()
-                .map(UserMapper::userToDto)
-                .collect(Collectors.toList());
+    public List<UserRequestDto> getAllUsers() {
+        return UserMapper.userToDto(userRepository.findAll());
     }
 
     @Override
-    public UserDto saveUser(UserDto userDto) {
-        User user = UserMapper.dtoToUser(userDto);
-        checkEmailDuplicate(user.getEmail(), user.getId());
-        return UserMapper.userToDto(userDao.save(user));
+    public UserRequestDto saveUser(UserRequestDto userRequestDto) {
+        User user = UserMapper.dtoToUser(userRequestDto);
+        return UserMapper.userToDto(userRepository.save(user));
     }
 
     @Override
-    public UserDto updateUser(UserDto userDto, Long id) {
-        String email = userDto.getEmail();
-        String name = userDto.getName();
+    public UserRequestDto updateUser(UserRequestDto userRequestDto, Long id) {
+        String email = userRequestDto.getEmail();
+        String name = userRequestDto.getName();
 
-        User user = userDao.findById(id);
+        User user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(
+                String.format("Пользователь с id: %s не обнаружен", id)));
 
         if (email != null) {
-            checkEmailDuplicate(email, id);
             user.setEmail(email);
         }
         if (name != null) {
             user.setName(name);
         }
-        return UserMapper.userToDto(userDao.update(user, id));
+        return UserMapper.userToDto(userRepository.save(user));
     }
 
     @Override
     public void deleteUser(Long id) {
-        userDao.delete(id);
+        userRepository.deleteById(id);
     }
 
     @Override
-    public UserDto getUserById(Long id) {
-        return UserMapper.userToDto(userDao.findById(id));
-    }
-
-    private void checkEmailDuplicate(String email, Long userId) {
-        boolean isDuplicate = userDao.findAll().stream()
-                .filter(u -> u.getId() != userId)
-                .map(User::getEmail)
-                .anyMatch(e -> e.equals(email));
-        if (isDuplicate) throw new EmailHasDuplicateException("Этот email уже используется");
+    public UserRequestDto getUserById(Long id) {
+        User user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(
+                String.format("Пользователь с id: %s не обнаружен", id)));
+        return UserMapper.userToDto(user);
     }
 }
