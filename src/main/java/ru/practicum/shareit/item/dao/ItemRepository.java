@@ -14,4 +14,6 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
             "or LCASE(i.description) like LCASE(concat('%',?1, '%'))) " +
             "AND i.available = true")
     List<Item> searchItemsByNameOrDescription(String text);
+
+    List<Item> findAllByRequestIdIn(List<Long> ids);
 }
