@@ -34,7 +34,16 @@ public class ItemMapper {
                 .name(item.getName())
                 .description(item.getDescription())
                 .available(item.getAvailable())
+                .requestId(item.getRequest() != null ? item.getRequest().getId() : null)
                 .build();
+    }
+
+    public static List<ItemShortDto> toItemShort(List<Item> items) {
+        List<ItemShortDto> dtos = new ArrayList<>();
+        for (Item item : items) {
+            dtos.add(toItemShort(item));
+        }
+        return dtos;
     }
 
     public static ItemResponseDto toItemResponseDto(Item item, BookingShortDto next, BookingShortDto last) {

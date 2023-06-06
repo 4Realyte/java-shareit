@@ -1,10 +1,11 @@
 package ru.practicum.shareit.request.dto;
 
-import ru.practicum.shareit.item.dto.ItemAnswerDto;
+import ru.practicum.shareit.item.utils.ItemMapper;
 import ru.practicum.shareit.request.model.RequestItem;
 import ru.practicum.shareit.user.model.User;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 public class RequestItemMapper {
@@ -24,12 +25,21 @@ public class RequestItemMapper {
                 .build();
     }
 
-    public static RequestItemResponseDto toResponseDto(RequestItem request, List<ItemAnswerDto> answers) {
+    public static RequestItemResponseDto toResponseDto(RequestItem request) {
         return RequestItemResponseDto.builder()
+                .id(request.getId())
                 .description(request.getDescription())
                 .created(request.getCreated())
-                .answers(answers)
+                .items(ItemMapper.toItemShort(request.getItems()))
                 .build();
 
+    }
+
+    public static List<RequestItemResponseDto> toResponseDto(List<RequestItem> requests) {
+        List<RequestItemResponseDto> dtos = new ArrayList<>();
+        for (RequestItem request : requests) {
+            dtos.add(toResponseDto(request));
+        }
+        return dtos;
     }
 }
