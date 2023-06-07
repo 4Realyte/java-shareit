@@ -5,6 +5,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.shareit.exception.RequestNotFoundException;
 import ru.practicum.shareit.exception.UserNotFoundException;
 import ru.practicum.shareit.item.dao.ItemRepository;
 import ru.practicum.shareit.request.dao.RequestItemRepository;
@@ -15,7 +16,6 @@ import ru.practicum.shareit.request.model.RequestItem;
 import ru.practicum.shareit.user.dao.UserRepository;
 import ru.practicum.shareit.user.model.User;
 
-import javax.validation.Valid;
 import java.util.List;
 
 @Service
@@ -27,7 +27,7 @@ public class RequestItemService {
     private final UserRepository userRepository;
 
     @Transactional
-    public RequestItemDto addNewRequest(@Valid RequestItemDto request, Long userId) {
+    public RequestItemDto addNewRequest(RequestItemDto request, Long userId) {
         User requestor = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(
                 String.format("Пользователь с id: %s не обнаружен", userId)));
         RequestItem requestItem = RequestItemMapper.dtoToRequest(request, requestor);
@@ -48,9 +48,17 @@ public class RequestItemService {
         if (!userRepository.existsById(userId)) {
             throw new UserNotFoundException(String.format("Пользователь с id: %s не обнаружен", userId));
         }
-        return repository.findAll(PageRequest.of(from > 0 ? from / size : 0, size,
-                        Sort.by(Sort.Direction.DESC, "created")))
+        return repository.findAllPaged(PageRequest.of(from > 0 ? from / size : 0, size,
+                        Sort.by(Sort.Direction.DESC, "created")), userId)
                 .map(RequestItemMapper::toResponseDto)
                 .getContent();
+    }
+
+    public RequestItemResponseDto getRequestById(Long userId, Long requestId) {
+        if (!userRepository.existsById(userId)) {
+            throw new UserNotFoundException(String.format("Пользователь с id: %s не обнаружен", userId));
+        }
+        return RequestItemMapper.toResponseDto(repository.findById(requestId).orElseThrow(() ->
+                new RequestNotFoundException(String.format("Запрос с id: %s не обнаружен", requestId))));
     }
 }

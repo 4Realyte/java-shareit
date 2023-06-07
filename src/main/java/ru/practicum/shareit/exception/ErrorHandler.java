@@ -26,7 +26,7 @@ public class ErrorHandler {
     }
 
     @ExceptionHandler({UserNotFoundException.class, ItemNotFoundException.class,
-            ItemUpdatingException.class, BookingNotFoundException.class})
+            ItemUpdatingException.class, BookingNotFoundException.class, RequestNotFoundException.class})
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public Map<String, String> handleNotFoundException(final RuntimeException ex) {
         log.warn("Ошибка запроса: {}", ex.getMessage());
