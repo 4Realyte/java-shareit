@@ -6,6 +6,7 @@ import ru.practicum.shareit.user.model.User;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class RequestItemMapper {
@@ -22,6 +23,7 @@ public class RequestItemMapper {
                 .description(dto.getDescription())
                 .requestor(requestor)
                 .created(LocalDateTime.now())
+                .items(Collections.emptyList())
                 .build();
     }
 
