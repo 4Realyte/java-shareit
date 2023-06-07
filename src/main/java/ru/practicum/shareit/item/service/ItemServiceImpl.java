@@ -1,6 +1,8 @@
 package ru.practicum.shareit.item.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -91,9 +93,10 @@ public class ItemServiceImpl implements ItemService {
         }
     }
 
-    public List<ItemResponseDto> getItemsByOwner(Long ownerId) {
+    public List<ItemResponseDto> getItemsByOwner(Long ownerId, int from, int size) {
         LocalDateTime cur = LocalDateTime.now();
-        List<Item> items = itemRepository.findAllByOwner_Id(ownerId);
+        Pageable page = PageRequest.of(from > 0 ? from / size : 0, size);
+        List<Item> items = itemRepository.findAllByOwner_Id(ownerId, page);
         List<Long> ids = items.stream().map(Item::getId).collect(Collectors.toList());
 
         List<Booking> bookings = bookingRepository.findAllByItem_IdIn(ids);
@@ -130,21 +133,23 @@ public class ItemServiceImpl implements ItemService {
         return result;
     }
 
-    public List<ItemRequestDto> search(String text, Long userId) {
-        if (text.isBlank()) {
+    public List<ItemRequestDto> search(GetSearchItem search) {
+        if (search.isBlank()) {
             return Collections.emptyList();
         }
-        userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(
-                String.format("Пользователь с id: %s не обнаружен", userId)));
-        return ItemMapper.itemToDto(itemRepository.searchItemsByNameOrDescription(text));
+        Pageable page = PageRequest.of(search.getFrom(), search.getSize());
+        userRepository.findById(search.getUserId()).orElseThrow(() -> new UserNotFoundException(
+                String.format("Пользователь с id: %s не обнаружен", search.getUserId())));
+        return ItemMapper.itemToDto(itemRepository.searchItemsByNameOrDescription(search.getText(), page));
     }
 
     @Override
-    public List<CommentResponseDto> searchCommentsByText(Long itemId, Long userId, String text) {
-        userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(
-                String.format("Пользователь с id: %s не обнаружен", userId)));
+    public List<CommentResponseDto> searchCommentsByText(GetSearchItem search) {
+        userRepository.findById(search.getUserId()).orElseThrow(() -> new UserNotFoundException(
+                String.format("Пользователь с id: %s не обнаружен", search.getUserId())));
+        Pageable page = PageRequest.of(search.getFrom(), search.getSize());
 
-        return CommentMapper.toResponseDto(commentRepository.searchByText(itemId, text));
+        return CommentMapper.toResponseDto(commentRepository.searchByText(search.getItemId(), search.getText(), page));
     }
 
     @Override
