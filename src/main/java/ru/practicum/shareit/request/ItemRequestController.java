@@ -5,7 +5,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.request.dto.RequestItemDto;
 import ru.practicum.shareit.request.dto.RequestItemResponseDto;
-import ru.practicum.shareit.request.service.RequestItemService;
+import ru.practicum.shareit.request.service.RequestItemServiceImpl;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -18,7 +18,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Validated
 public class ItemRequestController {
-    private final RequestItemService service;
+    private final RequestItemServiceImpl service;
 
     @PostMapping
     public RequestItemDto addNewRequest(@Valid @RequestBody RequestItemDto request,
