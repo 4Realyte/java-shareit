@@ -45,15 +45,23 @@ class RequestItemServiceImplTest {
 
     @BeforeEach
     void init() {
-        requestItemDto = RequestItemDto.builder()
-                .id(1L)
-                .description("some description")
-                .created(LocalDateTime.now())
-                .build();
-        requestor = User.builder()
+        requestItemDto = getRequestDto();
+        requestor = getUser();
+    }
+
+    private static User getUser() {
+        return User.builder()
                 .id(1L)
                 .name("Alexandr")
                 .email("alex@mail.ru")
+                .build();
+    }
+
+    private static RequestItemDto getRequestDto() {
+        return RequestItemDto.builder()
+                .id(1L)
+                .description("some description")
+                .created(LocalDateTime.now())
                 .build();
     }
 

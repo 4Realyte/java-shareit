@@ -5,7 +5,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.request.dto.RequestItemDto;
 import ru.practicum.shareit.request.dto.RequestItemResponseDto;
-import ru.practicum.shareit.request.service.RequestItemServiceImpl;
+import ru.practicum.shareit.request.service.RequestItemService;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -18,7 +18,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Validated
 public class ItemRequestController {
-    private final RequestItemServiceImpl service;
+    private final RequestItemService service;
 
     @PostMapping
     public RequestItemDto addNewRequest(@Valid @RequestBody RequestItemDto request,
@@ -34,7 +34,7 @@ public class ItemRequestController {
     @GetMapping("/all")
     public List<RequestItemResponseDto> getAllRequests(@RequestHeader("X-Sharer-User-Id") @NotNull Long userId,
                                                        @RequestParam(defaultValue = "0") @PositiveOrZero int from,
-                                                       @RequestParam(defaultValue = "1") int size) {
+                                                       @RequestParam(defaultValue = "10") int size) {
         return service.getAllRequests(userId, from, size);
     }
 
