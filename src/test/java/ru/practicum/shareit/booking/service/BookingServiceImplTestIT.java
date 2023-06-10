@@ -68,6 +68,30 @@ class BookingServiceImplTestIT {
 
     }
 
+    @Test
+    void approveBooking_shouldChangeStatusApprove() {
+        UserRequestDto user = userService.saveUser(getUserDto("lex@mail.ru"));
+        UserRequestDto owner = userService.saveUser(getUserDto("lexa@mail.ru"));
+        ItemShortDto item = itemService.addNewItem(getItemDto(), owner.getId());
+        BookingResponseDto booking = bookingService.addBooking(getBookingRequestDto(item.getId()), user.getId());
+
+        BookingResponseDto approveResult = bookingService.approveBooking(booking.getId(), true, owner.getId());
+
+        assertThat(approveResult.getStatus(), equalTo(BookingStatus.APPROVED));
+    }
+
+    @Test
+    void approveBooking_shouldChangeStatusRejected() {
+        UserRequestDto user = userService.saveUser(getUserDto("lex@mail.ru"));
+        UserRequestDto owner = userService.saveUser(getUserDto("lexa@mail.ru"));
+        ItemShortDto item = itemService.addNewItem(getItemDto(), owner.getId());
+        BookingResponseDto booking = bookingService.addBooking(getBookingRequestDto(item.getId()), user.getId());
+
+        BookingResponseDto rejectedResult = bookingService.approveBooking(booking.getId(), false, owner.getId());
+
+        assertThat(rejectedResult.getStatus(), equalTo(BookingStatus.REJECTED));
+    }
+
     private static UserRequestDto getUserDto(String email) {
         return UserRequestDto.builder()
                 .name("Alexandr")
