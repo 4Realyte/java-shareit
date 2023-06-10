@@ -13,7 +13,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     List<Comment> findAllByItemIdIn(List<Long> ids);
 
     @Query("select c from Comment as c " +
-            "JOIN Item as i " +
+            "JOIN c.item as i " +
             "where i.id=?1 AND LCASE(c.text) LIKE LCASE(concat('%',?2,'%')) " +
             "order by c.created DESC")
     List<Comment> searchByText(Long itemId, String text, Pageable page);
