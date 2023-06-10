@@ -145,6 +145,9 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public List<CommentResponseDto> searchCommentsByText(GetSearchItem search) {
+        if (search.isBlank()) {
+            return Collections.emptyList();
+        }
         userRepository.findById(search.getUserId()).orElseThrow(() -> new UserNotFoundException(
                 String.format("Пользователь с id: %s не обнаружен", search.getUserId())));
         Pageable page = PageRequest.of(search.getFrom(), search.getSize());
