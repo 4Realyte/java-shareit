@@ -167,6 +167,5 @@ class ItemRequestControllerTest {
                         jsonPath("$[0].created", notNullValue()),
                         jsonPath("$[0].items", empty())
                 );
-
     }
 }
