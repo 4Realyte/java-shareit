@@ -53,6 +53,21 @@ class ItemRepositoryTest {
         assertThat(result, empty());
     }
 
+    @Test
+    void findAllByOwner_Id() {
+        // given
+        User owner = getUser("alex@mail.ru");
+        em.persist(owner);
+        Item item = getItem(owner);
+        em.persist(item);
+        // when
+        List<Item> result = repository.findAllByOwner_Id(owner.getId(), Pageable.unpaged());
+        // then
+        assertThat(result, hasItem(allOf(
+                hasProperty("id", equalTo(item.getId()))
+        )));
+    }
+
     private static User getUser(String email) {
         return User.builder()
                 .name("Alexandr")

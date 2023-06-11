@@ -9,9 +9,9 @@ import ru.practicum.shareit.exception.RequestNotFoundException;
 import ru.practicum.shareit.exception.UserNotFoundException;
 import ru.practicum.shareit.request.dao.RequestItemRepository;
 import ru.practicum.shareit.request.dto.RequestItemDto;
-import ru.practicum.shareit.request.dto.RequestItemMapper;
 import ru.practicum.shareit.request.dto.RequestItemResponseDto;
 import ru.practicum.shareit.request.model.RequestItem;
+import ru.practicum.shareit.request.utils.RequestItemMapper;
 import ru.practicum.shareit.user.dao.UserRepository;
 import ru.practicum.shareit.user.model.User;
 

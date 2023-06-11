@@ -128,6 +128,36 @@ class BookingRepositoryTest {
     }
 
     @Test
+    void findFirstByBooker_IdAndItem_IdAndEndDateBefore() {
+        // given
+        LocalDateTime now = LocalDateTime.now();
+        User userOne = getUser("alex@mail.ru");
+        User userTwo = getUser("alexa@mail.ru");
+        em.persist(userOne);
+        em.persist(userTwo);
+
+        Item item = getItem(userOne);
+        em.persist(item);
+
+        Booking booking = getBooking(item, userTwo);
+        booking.setEndDate(now.minusHours(1));
+        em.persist(booking);
+        // when
+        Booking result = repository.findFirstByBooker_IdAndItem_IdAndEndDateBefore(userTwo.getId(), item.getId(), now)
+                .orElse(null);
+        // then
+        assertThat(result, notNullValue());
+        assertThat(result, allOf(
+                hasProperty("id", equalTo(booking.getId())),
+                hasProperty("startDate", notNullValue()),
+                hasProperty("endDate", notNullValue()),
+                hasProperty("booker", equalTo(userTwo)),
+                hasProperty("item", equalTo(item)),
+                hasProperty("status", equalTo(BookingStatus.WAITING))
+        ));
+    }
+
+    @Test
     void findAllByItem_IdIn() {
         User userOne = getUser("alex@mail.ru");
         User userTwo = getUser("alexa@mail.ru");
