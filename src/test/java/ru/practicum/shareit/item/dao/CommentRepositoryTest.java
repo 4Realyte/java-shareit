@@ -9,6 +9,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.item.model.QComment;
 import ru.practicum.shareit.user.model.User;
 
 import java.time.LocalDateTime;
@@ -59,6 +60,26 @@ class CommentRepositoryTest {
 
         // when
         List<Comment> comments = repository.findAllByItem_IdOrderByCreatedDesc(item.getId());
+        // then
+        assertThat(comments, hasSize(1));
+        assertThat(comments, hasItem(comment));
+    }
+
+    @Test
+    void findAll_QueryDsl() {
+        // given
+        User owner = getUser("alex@mail.ru");
+        User author = getUser("alexas@mail.ru");
+        em.persist(owner);
+        em.persist(author);
+        Item item = getItem(owner);
+        em.persist(item);
+        Comment comment = getComment(author, item);
+        em.persist(comment);
+        Pageable page = PageRequest.of(0, 10);
+
+        // when
+        List<Comment> comments = repository.findAll(QComment.comment.id.eq(comment.getId()), page).getContent();
         // then
         assertThat(comments, hasSize(1));
         assertThat(comments, hasItem(comment));

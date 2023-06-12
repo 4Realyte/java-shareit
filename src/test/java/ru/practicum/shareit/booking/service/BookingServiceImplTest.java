@@ -7,10 +7,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.web.server.ResponseStatusException;
 import ru.practicum.shareit.booking.BookingStatus;
 import ru.practicum.shareit.booking.State;
@@ -20,10 +17,7 @@ import ru.practicum.shareit.booking.dto.BookingResponseDto;
 import ru.practicum.shareit.booking.dto.GetBookingRequest;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.utils.BookingMapper;
-import ru.practicum.shareit.exception.BookingNotFoundException;
-import ru.practicum.shareit.exception.ItemNotAvailableException;
-import ru.practicum.shareit.exception.ItemNotFoundException;
-import ru.practicum.shareit.exception.UserNotFoundException;
+import ru.practicum.shareit.exception.*;
 import ru.practicum.shareit.item.dao.ItemRepository;
 import ru.practicum.shareit.item.dto.ItemShortDto;
 import ru.practicum.shareit.item.model.Item;
@@ -38,6 +32,7 @@ import java.util.Optional;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -57,10 +52,12 @@ class BookingServiceImplTest {
 
     @Test
     void addBooking_shouldThrowItemNotFoundException() {
+        // given
         BookingRequestDto dto = getBookingRequestDto();
+        // when
         when(itemRepository.findById(anyLong()))
-                .thenThrow(new ItemNotFoundException(String.format("Вещь с id: %s не обнаружена", 1L)));
-
+                .thenReturn(Optional.empty());
+        // then
         ItemNotFoundException exception = assertThrows(ItemNotFoundException.class,
                 () -> bookingService.addBooking(dto, 1L));
         assertThat(exception.getMessage(), containsString("Вещь с id: 1 не обнаружена"));
@@ -81,20 +78,16 @@ class BookingServiceImplTest {
 
     @Test
     void addBooking_shouldThrowUserNotFound() {
-        User user = User.builder()
-                .id(1L)
-                .name("Peter")
-                .email("peter@mail.ru")
-                .build();
-
+        // given
+        User user = getUser(1L, "peter@mail.ru");
         Item item = getItem(user, true);
-
         BookingRequestDto dto = getBookingRequestDto();
+        // when
         when(itemRepository.findById(anyLong()))
                 .thenReturn(Optional.of(item));
         when(userRepository.findById(anyLong()))
-                .thenThrow(new UserNotFoundException("Пользователь с id: 1 не обнаружен"));
-
+                .thenReturn(Optional.empty());
+        // then
         UserNotFoundException exception = assertThrows(UserNotFoundException.class,
                 () -> bookingService.addBooking(dto, 1L));
         assertThat(exception.getMessage(), containsString("Пользователь с id: 1 не обнаружен"));
@@ -102,11 +95,7 @@ class BookingServiceImplTest {
 
     @Test
     void addBooking_shouldThrowResponseStatusException() {
-        User user = User.builder()
-                .id(1L)
-                .name("Peter")
-                .email("peter@mail.ru")
-                .build();
+        User user = getUser(1L, "peter@mail.ru");
 
         Item item = getItem(user, true);
 
@@ -123,17 +112,9 @@ class BookingServiceImplTest {
 
     @Test
     void addBooking_shouldReturnBookingResponseDto() {
-        User user = User.builder()
-                .id(1L)
-                .name("Peter")
-                .email("peter@mail.ru")
-                .build();
+        User user = getUser(1L, "peter@mail.ru");
 
-        User owner = User.builder()
-                .id(2L)
-                .name("Peter")
-                .email("peters@mail.ru")
-                .build();
+        User owner = getUser(2L, "peters@mail.ru");
 
         Item item = getItem(owner, true);
         BookingRequestDto dto = getBookingRequestDto();
@@ -162,8 +143,10 @@ class BookingServiceImplTest {
 
     @Test
     void getBookingById_shouldThrowBookingNotFoundEx() {
+        // when
         when(bookingRepository.findBooking(anyLong(), anyLong()))
                 .thenThrow(new BookingNotFoundException("Бронь с id: 1 не обнаружена"));
+        // then
         BookingNotFoundException exception = assertThrows(BookingNotFoundException.class,
                 () -> bookingService.getBookingById(1L, 1L));
         assertThat(exception.getMessage(), containsString("Бронь с id: 1 не обнаружена"));
@@ -171,9 +154,26 @@ class BookingServiceImplTest {
     }
 
     @Test
+    void getBookingById_shouldReturnBookingResponseDto() {
+        // given
+        User user = getUser(1L, "peters@mail.ru");
+        Item item = getItem(user, true);
+        Booking booking = getBooking(user, item);
+        // when
+        when(bookingRepository.findBooking(anyLong(), anyLong()))
+                .thenReturn(Optional.of(booking));
+        BookingResponseDto result = bookingService.getBookingById(1L, 1L);
+        // then
+        assertThat(result.getId(), equalTo(booking.getId()));
+        assertThat(result, notNullValue());
+        assertThat(result, instanceOf(BookingResponseDto.class));
+        assertThat(result.getBooker().getName(), equalTo(user.getName()));
+    }
+
+    @Test
     void approveBooking_shouldThrowBookingNotFoundEx() {
         when(bookingRepository.findBookingByOwner(anyLong(), anyLong()))
-                .thenThrow(new BookingNotFoundException("Бронь с id: 1 для владельца с id: 1 не обнаружена"));
+                .thenReturn(Optional.empty());
         BookingNotFoundException exception = assertThrows(BookingNotFoundException.class,
                 () -> bookingService.approveBooking(1L, true, 1L));
         assertThat(exception.getMessage(), containsString("Бронь с id: 1 для владельца с id: 1 не обнаружена"));
@@ -200,21 +200,9 @@ class BookingServiceImplTest {
     @Test
     void approveBooking_shouldChangeStatusToRejectedOrApproved() {
         // given
-        User user = User.builder()
-                .id(1L)
-                .name("Peter")
-                .email("peters@mail.ru")
-                .build();
-        Item item = getItem(null,true);
-        Booking booking = Booking.builder()
-                .id(1L)
-                .status(BookingStatus.WAITING)
-                .startDate(LocalDateTime.now())
-                .endDate(LocalDateTime.now().plusDays(10))
-                .booker(user)
-                .item(item)
-                .build();
-
+        User user = getUser(1L, "peters@mail.ru");
+        Item item = getItem(null, true);
+        Booking booking = getBooking(user, item);
         // when
         when(bookingRepository.findBookingByOwner(anyLong(), anyLong()))
                 .thenReturn(Optional.of(booking));
@@ -247,6 +235,71 @@ class BookingServiceImplTest {
         assertThat(ex, instanceOf(BookingNotFoundException.class));
     }
 
+    @Test
+    void getAllUserBookings_shouldReturnBookingsRejected() {
+        // given
+        LocalDateTime now = LocalDateTime.now();
+        List<Predicate> predicates = new ArrayList<>();
+        Pageable page = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "startDate"));
+        predicates.add(booking.booker.id.eq(1L));
+        predicates.add(booking.status.eq(BookingStatus.REJECTED));
+        User user = getUser(1L, "peters@mail.ru");
+        Item item = getItem(null, true);
+        Booking booking = getBooking(user, item);
+        booking.setStatus(BookingStatus.REJECTED);
+
+        Page<Booking> bookings = new PageImpl<>(List.of(booking));
+        // when
+        when(bookingRepository.findAll(ExpressionUtils.allOf(predicates), page))
+                .thenReturn(bookings);
+        GetBookingRequest request = GetBookingRequest.of(State.REJECTED, 1L, false, 0, 10);
+        // then
+        List<BookingResponseDto> result = bookingService.getAllUserBookings(request);
+        assertDoesNotThrow(() -> bookingService.getAllUserBookings(request));
+        assertThat(result, not(empty()));
+        assertThat(result, hasItem(allOf(
+                hasProperty("id", equalTo(booking.getId())),
+                hasProperty("booker", instanceOf(UserShortResponseDto.class))
+        )));
+    }
+
+    @Test
+    void getAllUserBookings_shouldReturnBookings_WAITING() {
+        // given
+        LocalDateTime now = LocalDateTime.now();
+        List<Predicate> predicates = new ArrayList<>();
+        Pageable page = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "startDate"));
+        predicates.add(booking.booker.id.eq(1L));
+        predicates.add(booking.status.eq(BookingStatus.WAITING));
+        User user = getUser(1L, "peters@mail.ru");
+        Item item = getItem(null, true);
+        Booking booking = getBooking(user, item);
+
+        Page<Booking> bookings = new PageImpl<>(List.of(booking));
+        // when
+        when(bookingRepository.findAll(ExpressionUtils.allOf(predicates), page))
+                .thenReturn(bookings);
+        GetBookingRequest request = GetBookingRequest.of(State.WAITING, 1L, false, 0, 10);
+        List<BookingResponseDto> result = bookingService.getAllUserBookings(request);
+        // then
+        assertDoesNotThrow(() -> bookingService.getAllUserBookings(request));
+        assertThat(result, not(empty()));
+        assertThat(result, hasItem(allOf(
+                hasProperty("id", equalTo(booking.getId())),
+                hasProperty("booker", instanceOf(UserShortResponseDto.class))
+        )));
+    }
+
+    @Test
+    void getAllUserBookings_shouldThrowUnknowStateEx() {
+        // given
+        GetBookingRequest request = GetBookingRequest.of(State.UNSUPPORTED_STATUS, 1L, false, 0, 10);
+        // when + then
+        UnknownStateException ex = assertThrows(UnknownStateException.class,
+                () -> bookingService.getAllUserBookings(request));
+        assertThat(ex.getMessage(), containsStringIgnoringCase(State.UNSUPPORTED_STATUS.name()));
+    }
+
     private static BookingRequestDto getBookingRequestDto() {
         return BookingRequestDto.builder()
                 .id(1L)
@@ -264,6 +317,25 @@ class BookingServiceImplTest {
                 .name("key")
                 .owner(owner)
                 .available(available)
+                .build();
+    }
+
+    private static User getUser(long id, String mail) {
+        return User.builder()
+                .id(id)
+                .name("Peter")
+                .email(mail)
+                .build();
+    }
+
+    private static Booking getBooking(User user, Item item) {
+        return Booking.builder()
+                .id(1L)
+                .status(BookingStatus.WAITING)
+                .startDate(LocalDateTime.now())
+                .endDate(LocalDateTime.now().plusDays(10))
+                .booker(user)
+                .item(item)
                 .build();
     }
 }

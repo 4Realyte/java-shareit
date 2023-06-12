@@ -65,7 +65,59 @@ class BookingServiceImplTestIT {
                 hasProperty("booker", notNullValue()),
                 hasProperty("status", equalTo(BookingStatus.WAITING))
         )));
+    }
 
+    @Test
+    void getAllUserBookings_shouldReturnFutureBookings() {
+        // given
+        UserRequestDto user = userService.saveUser(getUserDto("lex@mail.ru"));
+        UserRequestDto owner = userService.saveUser(getUserDto("lexa@mail.ru"));
+        ItemShortDto item = itemService.addNewItem(getItemDto(), owner.getId());
+
+        BookingRequestDto bookingRequestDto = getBookingRequestDto(item.getId());
+        bookingRequestDto.setStartDate(LocalDateTime.now().plusMinutes(30));
+        BookingResponseDto booking = bookingService.addBooking(bookingRequestDto, user.getId());
+
+        GetBookingRequest request = GetBookingRequest.of(State.FUTURE, user.getId(), false, 0, 10);
+        // when
+        List<BookingResponseDto> result = bookingService.getAllUserBookings(request);
+        // then
+        assertThat(result, hasSize(1));
+        assertThat(result, hasItem(allOf(
+                hasProperty("id", equalTo(booking.getId())),
+                hasProperty("startDate", equalTo(booking.getStartDate())),
+                hasProperty("endDate", equalTo(booking.getEndDate())),
+                hasProperty("item", notNullValue()),
+                hasProperty("booker", notNullValue()),
+                hasProperty("status", equalTo(BookingStatus.WAITING))
+        )));
+    }
+
+    @Test
+    void getAllUserBookings_shouldReturnPastBookings() {
+        // given
+        UserRequestDto user = userService.saveUser(getUserDto("lex@mail.ru"));
+        UserRequestDto owner = userService.saveUser(getUserDto("lexa@mail.ru"));
+        ItemShortDto item = itemService.addNewItem(getItemDto(), owner.getId());
+
+        BookingRequestDto bookingRequestDto = getBookingRequestDto(item.getId());
+        bookingRequestDto.setStartDate(LocalDateTime.now().minusDays(15));
+        bookingRequestDto.setEndDate(LocalDateTime.now().minusDays(10));
+        BookingResponseDto booking = bookingService.addBooking(bookingRequestDto, user.getId());
+
+        GetBookingRequest request = GetBookingRequest.of(State.PAST, user.getId(), false, 0, 10);
+        // when
+        List<BookingResponseDto> result = bookingService.getAllUserBookings(request);
+        // then
+        assertThat(result, not(empty()));
+        assertThat(result, hasItem(allOf(
+                hasProperty("id", equalTo(booking.getId())),
+                hasProperty("startDate", equalTo(booking.getStartDate())),
+                hasProperty("endDate", equalTo(booking.getEndDate())),
+                hasProperty("item", notNullValue()),
+                hasProperty("booker", notNullValue()),
+                hasProperty("status", equalTo(BookingStatus.WAITING))
+        )));
     }
 
     @Test
@@ -109,7 +161,6 @@ class BookingServiceImplTestIT {
 
     private static BookingRequestDto getBookingRequestDto(Long itemId) {
         return BookingRequestDto.builder()
-                .id(1L)
                 .status(BookingStatus.WAITING)
                 .startDate(LocalDateTime.now())
                 .endDate(LocalDateTime.now().plusDays(10))

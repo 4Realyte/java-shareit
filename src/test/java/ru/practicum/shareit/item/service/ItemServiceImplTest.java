@@ -5,11 +5,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 import ru.practicum.shareit.booking.BookingStatus;
 import ru.practicum.shareit.booking.dao.BookingRepository;
 import ru.practicum.shareit.booking.model.Booking;
+import ru.practicum.shareit.exception.ItemNotFoundException;
 import ru.practicum.shareit.exception.ItemUpdatingException;
 import ru.practicum.shareit.exception.UserNotFoundException;
 import ru.practicum.shareit.item.dao.CommentRepository;
@@ -29,6 +29,7 @@ import java.util.Optional;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -54,7 +55,7 @@ class ItemServiceImplTest {
         ItemRequestDto requestDto = getItemRequestDto();
 
         when(userRepository.findById(anyLong()))
-                .thenThrow(new UserNotFoundException("Пользователь с id: 1 не обнаружен"));
+                .thenReturn(Optional.empty());
 
         assertThrows(UserNotFoundException.class,
                 () -> itemService.addNewItem(requestDto, 1L));
@@ -106,6 +107,64 @@ class ItemServiceImplTest {
     }
 
     @Test
+    void updateItem_shouldThrowUserNotFoundEx() {
+        // given
+        ItemRequestDto requestDto = getItemRequestDto();
+        // when
+        when(userRepository.findById(anyLong()))
+                .thenReturn(Optional.empty());
+        // then
+        assertThrows(UserNotFoundException.class,
+                () -> itemService.updateItem(requestDto, 2L));
+    }
+
+    @Test
+    void updateItem_shouldThrowItemNotFoundEx() {
+        // given
+        ItemRequestDto requestDto = getItemRequestDto();
+        User user = getUser("some@mail.ru");
+        user.setId(1L);
+        // when
+        when(userRepository.findById(anyLong()))
+                .thenReturn(Optional.of(user));
+        when(itemRepository.findById(anyLong()))
+                .thenReturn(Optional.empty());
+        // then
+        assertThrows(ItemNotFoundException.class,
+                () -> itemService.updateItem(requestDto, 2L));
+    }
+
+    @Test
+    void updateItem_shouldSetAttributes() {
+        // given
+        ItemRequestDto requestDto = ItemRequestDto.builder()
+                .id(1L)
+                .name("item")
+                .description("some Item")
+                .available(false)
+                .requestId(1L)
+                .build();
+        User owner = getUser("some@mail.ru");
+        owner.setId(1L);
+        User user = getUser("some2@mail.ru");
+        user.setId(2L);
+        Item item = getItem(owner);
+        // when
+        when(userRepository.findById(anyLong()))
+                .thenReturn(Optional.of(owner));
+        when(itemRepository.findById(anyLong()))
+                .thenReturn(Optional.of(item));
+        when(itemRepository.save(any()))
+                .thenReturn(item);
+
+        ItemShortDto result = itemService.updateItem(requestDto, owner.getId());
+        // then
+        assertThat(result.getName(), equalTo(requestDto.getName()));
+        assertThat(result.getDescription(), equalTo(requestDto.getDescription()));
+        assertFalse(result.getAvailable());
+    }
+
+    @Test
     void getItemById_shouldReturnItemWithNoBookings() {
         // given
         User owner = getUser("some@mail.ru");
@@ -137,6 +196,29 @@ class ItemServiceImplTest {
         verify(bookingRepository, times(1)).findNextBookingByItemId(anyLong(), any());
         verify(commentRepository, times(1)).findAllByItem_IdOrderByCreatedDesc(anyLong());
         verifyNoMoreInteractions(userRepository, itemRepository, bookingRepository, commentRepository);
+    }
+
+    @Test
+    void getItemById_shouldThrowUserNotFound() {
+        // when
+        when(userRepository.findById(anyLong()))
+                .thenReturn(Optional.empty());
+        // then
+        assertThrows(UserNotFoundException.class, () -> itemService.getItemById(1L, 1L));
+    }
+
+    @Test
+    void getItemById_shouldThrowItemNotFound() {
+        // given
+        User user = getUser("some@mail.ru");
+        user.setId(1L);
+        // when
+        when(userRepository.findById(anyLong()))
+                .thenReturn(Optional.of(user));
+        when(itemRepository.findById(anyLong()))
+                .thenReturn(Optional.empty());
+        // then
+        assertThrows(ItemNotFoundException.class, () -> itemService.getItemById(1L, 1L));
     }
 
     @Test
@@ -245,7 +327,7 @@ class ItemServiceImplTest {
     }
 
     @Test
-    void search() {
+    void search_shouldReturnEmptyResult() {
         // given
         GetSearchItem search = GetSearchItem.of("", 1L, 0, 10);
         // when
@@ -255,7 +337,64 @@ class ItemServiceImplTest {
     }
 
     @Test
-    void searchCommentsByText() {
+    void search_shouldReturnItem() {
+        // given
+        User owner = getUser("some@mail.ru");
+        owner.setId(1L);
+        User user = getUser("some2@mail.ru");
+        user.setId(2L);
+        Item item = getItem(owner);
+        List<Item> items = List.of(item);
+        GetSearchItem search = GetSearchItem.of("brush", 1L, 0, 10);
+        // when
+        when(userRepository.findById(anyLong()))
+                .thenReturn(Optional.of(user));
+        when(itemRepository.searchItemsByNameOrDescription(anyString(), any()))
+                .thenReturn(items);
+        List<ItemRequestDto> result = itemService.search(search);
+        // then
+        assertThat(result, hasSize(1));
+        assertThat(result, hasItem(allOf(
+                hasProperty("id", equalTo(item.getId())),
+                hasProperty("name", equalTo(item.getName())),
+                hasProperty("description", equalTo(item.getDescription()))
+        )));
+    }
+
+    @Test
+    void search_shouldThrowUserNotFoundEx() {
+        // given
+        GetSearchItem search = GetSearchItem.of("brush", 1L, 0, 10);
+        // when
+        when(userRepository.findById(anyLong()))
+                .thenReturn(Optional.empty());
+        // then
+        assertThrows(UserNotFoundException.class, () -> itemService.search(search));
+    }
+
+    @Test
+    void searchCommentsByText_shouldReturnComments() {
+        // given
+        GetSearchItem search = GetSearchItem.of("", 1L, 1L, 0, 10);
+        // when
+        List<CommentResponseDto> result = itemService.searchCommentsByText(search);
+        // then
+        assertThat(result, empty());
+    }
+
+    @Test
+    void searchCommentsByText_shouldThrowUserNotFound() {
+        // given
+        GetSearchItem search = GetSearchItem.of("some", 1L, 1L, 0, 10);
+        // when
+        when(userRepository.findById(anyLong()))
+                .thenReturn(Optional.empty());
+        // then
+        assertThrows(UserNotFoundException.class, () -> itemService.searchCommentsByText(search));
+    }
+
+    @Test
+    void searchCommentsByText_ShouldReturnEmptyResult() {
         User owner = getUser("some@mail.ru");
         owner.setId(1L);
         User user = getUser("some2@mail.ru");
@@ -278,17 +417,38 @@ class ItemServiceImplTest {
     }
 
     @Test
-    void addComment() {
+    void addComment_ShouldThrowExWhenUserNeverBookedItem() {
         User booker = getUser("booker@mail.ru");
         User owner = getUser("some@mail.ru");
         Item item = getItem(owner);
-        Booking booking = getBooking(item, booker);
         CommentRequestDto commentDto = getCommentDto(booker, item);
         when(bookingRepository.findFirstByBooker_IdAndItem_IdAndEndDateBefore(anyLong(), anyLong(), any()))
-                .thenThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                        "Пользователь с id: 1 не брал в аренду вещь с id: 1"));
+                .thenReturn(Optional.empty());
         assertThrows(ResponseStatusException.class, () -> itemService.addComment(item.getId(), commentDto, 1L));
         verifyNoInteractions(commentRepository);
+    }
+
+    @Test
+    void addComment_shouldReturnComment() {
+        // given
+        User booker = getUser("booker@mail.ru");
+        booker.setId(1L);
+        User owner = getUser("some@mail.ru");
+        owner.setId(2L);
+        Item item = getItem(owner);
+        Booking booking = getBooking(item, booker);
+        CommentRequestDto commentDto = getCommentDto(booker, item);
+        Comment comment = getComments(booker, item).get(0);
+        // when
+        when(bookingRepository.findFirstByBooker_IdAndItem_IdAndEndDateBefore(anyLong(), anyLong(), any()))
+                .thenReturn(Optional.of(booking));
+        when(commentRepository.save(any()))
+                .thenReturn(comment);
+        CommentResponseDto result = itemService.addComment(item.getId(), commentDto, booker.getId());
+        assertThat(result, notNullValue());
+        assertThat(result.getId(), equalTo(comment.getId()));
+        assertThat(result.getText(), equalTo(comment.getText()));
+        assertThat(result.getAuthorName(), equalTo(booker.getName()));
     }
 
     private static CommentRequestDto getCommentDto(User booker, Item item) {

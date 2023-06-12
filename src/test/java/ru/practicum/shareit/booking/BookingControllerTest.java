@@ -63,6 +63,28 @@ class BookingControllerTest {
 
     @Test
     @SneakyThrows
+    void addBooking_whenInvalidDate() {
+        BookingRequestDto requestDto = getBookingRequestDto();
+        requestDto.setEndDate(requestDto.getStartDate());
+        BookingResponseDto responseDto = getBookingResponse();
+        // when
+        when(bookingService.addBooking(any(), anyLong()))
+                .thenReturn(responseDto);
+
+        mvc.perform(post("/bookings")
+                        .content(mapper.writeValueAsString(requestDto))
+                        .characterEncoding(StandardCharsets.UTF_8)
+                        .header("X-Sharer-User-Id", "1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                // then
+                .andExpectAll(
+                        status().isBadRequest()
+                );
+    }
+
+    @Test
+    @SneakyThrows
     void getBookingById() {
         BookingResponseDto responseDto = getBookingResponse();
 

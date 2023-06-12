@@ -86,7 +86,7 @@ class UserServiceImplTest {
         UserRequestDto dto = getUserDto(1L, "lexa@mail.ru");
         // when
         when(userRepository.findById(anyLong()))
-                .thenThrow(new UserNotFoundException("Пользователь с id: 1 не обнаружен"));
+                .thenReturn(Optional.empty());
         // then
         assertThrows(UserNotFoundException.class,
                 () -> userService.updateUser(dto, 1L));
@@ -139,7 +139,7 @@ class UserServiceImplTest {
     void getUserById_shouldThrowUserNotFoundEx() {
         // when
         when(userRepository.findById(anyLong()))
-                .thenThrow(new UserNotFoundException("Пользователь с id: 1 не обнаружен"));
+                .thenReturn(Optional.empty());
         // then
         assertThrows(UserNotFoundException.class,
                 () -> userService.getUserById(1L));
