@@ -198,7 +198,7 @@ class BookingServiceImplTest {
     }
 
     @Test
-    void approveBooking_shouldChangeStatusToRejectedOrApproved() {
+    void approveBooking_shouldChangeStatusToRejected() {
         // given
         User user = getUser(1L, "peters@mail.ru");
         Item item = getItem(null, true);
@@ -213,6 +213,22 @@ class BookingServiceImplTest {
         // then
         assertThat(rejected.getStatus(), equalTo(BookingStatus.REJECTED));
         booking.setStatus(BookingStatus.WAITING);
+        BookingResponseDto approved = bookingService.approveBooking(1L, true, 1L);
+        // then
+        assertThat(approved.getStatus(), equalTo(BookingStatus.APPROVED));
+    }
+
+    @Test
+    void approveBooking_shouldChangeStatusToApproved() {
+        // given
+        User user = getUser(1L, "peters@mail.ru");
+        Item item = getItem(null, true);
+        Booking booking = getBooking(user, item);
+        // when
+        when(bookingRepository.findBookingByOwner(anyLong(), anyLong()))
+                .thenReturn(Optional.of(booking));
+        when(bookingRepository.save(any()))
+                .thenReturn(booking);
         BookingResponseDto approved = bookingService.approveBooking(1L, true, 1L);
         // then
         assertThat(approved.getStatus(), equalTo(BookingStatus.APPROVED));
@@ -238,7 +254,6 @@ class BookingServiceImplTest {
     @Test
     void getAllUserBookings_shouldReturnBookingsRejected() {
         // given
-        LocalDateTime now = LocalDateTime.now();
         List<Predicate> predicates = new ArrayList<>();
         Pageable page = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "startDate"));
         predicates.add(booking.booker.id.eq(1L));
@@ -266,7 +281,6 @@ class BookingServiceImplTest {
     @Test
     void getAllUserBookings_shouldReturnBookings_WAITING() {
         // given
-        LocalDateTime now = LocalDateTime.now();
         List<Predicate> predicates = new ArrayList<>();
         Pageable page = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "startDate"));
         predicates.add(booking.booker.id.eq(1L));
@@ -291,7 +305,7 @@ class BookingServiceImplTest {
     }
 
     @Test
-    void getAllUserBookings_shouldThrowUnknowStateEx() {
+    void getAllUserBookings_shouldThrowUnknownStateEx() {
         // given
         GetBookingRequest request = GetBookingRequest.of(State.UNSUPPORTED_STATUS, 1L, false, 0, 10);
         // when + then

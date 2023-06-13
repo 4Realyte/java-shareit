@@ -373,7 +373,7 @@ class ItemServiceImplTest {
     }
 
     @Test
-    void searchCommentsByText_shouldReturnComments() {
+    void searchCommentsByText_shouldReturnEmptyComments() {
         // given
         GetSearchItem search = GetSearchItem.of("", 1L, 1L, 0, 10);
         // when
@@ -394,7 +394,7 @@ class ItemServiceImplTest {
     }
 
     @Test
-    void searchCommentsByText_ShouldReturnEmptyResult() {
+    void searchCommentsByText_ShouldReturnNotEmptyResult() {
         User owner = getUser("some@mail.ru");
         owner.setId(1L);
         User user = getUser("some2@mail.ru");
