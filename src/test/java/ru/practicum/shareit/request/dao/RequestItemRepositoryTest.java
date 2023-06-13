@@ -22,21 +22,6 @@ class RequestItemRepositoryTest {
     @Autowired
     private RequestItemRepository repository;
 
-    private static User getUser(String email) {
-        return User.builder()
-                .name("Alexandr")
-                .email(email)
-                .build();
-    }
-
-    private static RequestItem getRequest(User user) {
-        return RequestItem.builder()
-                .description("some description")
-                .requestor(user)
-                .created(LocalDateTime.now())
-                .build();
-    }
-
     @Test
     void findAllByRequestorId() {
         // given
@@ -91,5 +76,20 @@ class RequestItemRepositoryTest {
                 hasProperty("created", notNullValue())
         )));
 
+    }
+
+    private static User getUser(String email) {
+        return User.builder()
+                .name("Alexandr")
+                .email(email)
+                .build();
+    }
+
+    private static RequestItem getRequest(User user) {
+        return RequestItem.builder()
+                .description("some description")
+                .requestor(user)
+                .created(LocalDateTime.now())
+                .build();
     }
 }

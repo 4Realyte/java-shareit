@@ -102,7 +102,6 @@ class RequestItemServiceImplTest {
         // when
         when(userRepository.existsById(anyLong()))
                 .thenReturn(false);
-
         // then
         final UserNotFoundException ex = assertThrows(UserNotFoundException.class,
                 () -> requestItemService.getAllRequests(1L, 0, 10));
@@ -119,7 +118,6 @@ class RequestItemServiceImplTest {
         // when
         when(userRepository.existsById(anyLong()))
                 .thenReturn(true);
-
         when(reqRepo.findAllPaged(any(), anyLong()))
                 .thenReturn(page);
         List<RequestItemResponseDto> dtos = requestItemService.getAllRequests(1L, 0, 10);

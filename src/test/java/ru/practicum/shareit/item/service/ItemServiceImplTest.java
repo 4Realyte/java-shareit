@@ -100,7 +100,6 @@ class ItemServiceImplTest {
                 .thenReturn(Optional.of(user));
         when(itemRepository.findById(anyLong()))
                 .thenReturn(Optional.of(item));
-
         // then
         assertThrows(ItemUpdatingException.class,
                 () -> itemService.updateItem(requestDto, 2L));
@@ -174,7 +173,7 @@ class ItemServiceImplTest {
         Item item = getItem(owner);
         Booking booking = getBooking(item, user);
         List<Comment> comments = getComments(user, item);
-
+        // when
         when(userRepository.findById(anyLong()))
                 .thenReturn(Optional.of(user));
         when(itemRepository.findById(anyLong()))
@@ -187,7 +186,7 @@ class ItemServiceImplTest {
                 .thenReturn(comments);
 
         ItemResponseDto result = itemService.getItemById(2L, 1L);
-
+        // then
         assertThat(result.getNextBooking(), nullValue());
         assertThat(result.getLastBooking(), nullValue());
         verify(userRepository, times(1)).findById(anyLong());
@@ -315,6 +314,7 @@ class ItemServiceImplTest {
                 .thenReturn(comments);
 
         List<ItemResponseDto> result = itemService.getItemsByOwner(1L, 0, 10);
+        // then
         assertThat(result, hasSize(1));
         assertThat(result, hasItem(allOf(
                 hasProperty("nextBooking", nullValue()),
@@ -395,6 +395,7 @@ class ItemServiceImplTest {
 
     @Test
     void searchCommentsByText_ShouldReturnNotEmptyResult() {
+        // given
         User owner = getUser("some@mail.ru");
         owner.setId(1L);
         User user = getUser("some2@mail.ru");
@@ -403,13 +404,14 @@ class ItemServiceImplTest {
 
         List<Comment> comments = getComments(user, item);
         GetSearchItem search = GetSearchItem.of("not empty search", 1L, 1L, 0, 10);
+        // when
         when(commentRepository.searchByText(anyLong(), anyString(), any()))
                 .thenReturn(comments);
         when(userRepository.findById(anyLong()))
                 .thenReturn(Optional.of(user));
 
         List<CommentResponseDto> result = itemService.searchCommentsByText(search);
-
+        // then
         assertThat(result, not(empty()));
         verify(commentRepository, times(1)).searchByText(anyLong(), anyString(), any());
         verify(userRepository, times(1)).findById(anyLong());
@@ -418,12 +420,15 @@ class ItemServiceImplTest {
 
     @Test
     void addComment_ShouldThrowExWhenUserNeverBookedItem() {
+        // given
         User booker = getUser("booker@mail.ru");
         User owner = getUser("some@mail.ru");
         Item item = getItem(owner);
         CommentRequestDto commentDto = getCommentDto(booker, item);
+        // when
         when(bookingRepository.findFirstByBooker_IdAndItem_IdAndEndDateBefore(anyLong(), anyLong(), any()))
                 .thenReturn(Optional.empty());
+        // then
         assertThrows(ResponseStatusException.class, () -> itemService.addComment(item.getId(), commentDto, 1L));
         verifyNoInteractions(commentRepository);
     }
@@ -445,6 +450,7 @@ class ItemServiceImplTest {
         when(commentRepository.save(any()))
                 .thenReturn(comment);
         CommentResponseDto result = itemService.addComment(item.getId(), commentDto, booker.getId());
+        // then
         assertThat(result, notNullValue());
         assertThat(result.getId(), equalTo(comment.getId()));
         assertThat(result.getText(), equalTo(comment.getText()));

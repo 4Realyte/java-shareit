@@ -31,7 +31,6 @@ class ItemServiceImplTestIT {
     void getItemById_whenOwner() {
         // given
         LocalDateTime now = LocalDateTime.now();
-
         UserRequestDto user = userService.saveUser(getUserDto("lex@mail.ru"));
         UserRequestDto owner = userService.saveUser(getUserDto("lexa@mail.ru"));
         ItemShortDto item = itemService.addNewItem(getItemDto(), owner.getId());
@@ -46,7 +45,7 @@ class ItemServiceImplTestIT {
     }
 
     @Test
-    void getItemById_whenNotOwner() {
+    void getItemById_whenNotOwner_bookingsShouldBeNull() {
         // given
         LocalDateTime now = LocalDateTime.now();
 
@@ -94,7 +93,7 @@ class ItemServiceImplTestIT {
     }
 
     @Test
-    void getItemsByOwner_bookingsEmptyCommentsNull() {
+    void getItemsByOwner_bookingsNullCommentsNull() {
         // given
         UserRequestDto owner = userService.saveUser(getUserDto("lexa@mail.ru"));
         ItemShortDto item = itemService.addNewItem(getItemDto(), owner.getId());
@@ -131,7 +130,7 @@ class ItemServiceImplTestIT {
     }
 
     @Test
-    void search_shouldReturnEmptyResult() {
+    void search_shouldReturnEmptyResult_WhenSearchRequestNotFound() {
         // given
         UserRequestDto user = userService.saveUser(getUserDto("lex@mail.ru"));
         UserRequestDto owner = userService.saveUser(getUserDto("lexa@mail.ru"));
@@ -142,9 +141,21 @@ class ItemServiceImplTestIT {
         // then
         assertThat(result, empty());
     }
+    @Test
+    void search_shouldReturnEmptyResult_WhenSearchRequestIsEmptyString() {
+        // given
+        UserRequestDto user = userService.saveUser(getUserDto("lex@mail.ru"));
+        UserRequestDto owner = userService.saveUser(getUserDto("lexa@mail.ru"));
+        ItemShortDto item = itemService.addNewItem(getItemDto(), owner.getId());
+        GetSearchItem search = GetSearchItem.of("", user.getId(), 0, 10);
+        // when
+        List<ItemRequestDto> result = itemService.search(search);
+        // then
+        assertThat(result, empty());
+    }
 
     @Test
-    void searchCommentsByText() {
+    void searchCommentsByText_shouldReturnComments_WhenSearchRequestIsFound() {
         // given
         LocalDateTime now = LocalDateTime.now();
         UserRequestDto user = userService.saveUser(getUserDto("lex@mail.ru"));
@@ -164,6 +175,22 @@ class ItemServiceImplTestIT {
                 hasProperty("authorName", equalTo(user.getName())),
                 hasProperty("created", notNullValue())
         )));
+    }
+    @Test
+    void searchCommentsByText_shouldReturnEmptyList_WhenSearchRequestIsEmptyString() {
+        // given
+        LocalDateTime now = LocalDateTime.now();
+        UserRequestDto user = userService.saveUser(getUserDto("lex@mail.ru"));
+        UserRequestDto owner = userService.saveUser(getUserDto("lexa@mail.ru"));
+        ItemShortDto item = itemService.addNewItem(getItemDto(), owner.getId());
+        BookingResponseDto lastBooking = bookingService.addBooking(getBookingRequestDto(
+                item.getId(), now.minusDays(4L), now.minusDays(1L)), user.getId());
+        CommentResponseDto comment = itemService.addComment(item.getId(), getCommentDto(), user.getId());
+        GetSearchItem search = GetSearchItem.of("", user.getId(), item.getId(), 0, 10);
+        // when
+        List<CommentResponseDto> result = itemService.searchCommentsByText(search);
+        // then
+        assertThat(result, empty());
     }
 
     private static UserRequestDto getUserDto(String email) {

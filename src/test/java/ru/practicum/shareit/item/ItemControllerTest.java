@@ -36,7 +36,7 @@ class ItemControllerTest {
 
     @Test
     @SneakyThrows
-    void addItem() {
+    void addItem_shouldAddItem_whenRequestIsCorrect() {
         // given
         ItemRequestDto dto = getItemRequestDto();
         ItemShortDto item = getItemShortDto();
@@ -61,10 +61,29 @@ class ItemControllerTest {
                         jsonPath("$.requestId", notNullValue())
                 );
     }
+    @Test
+    @SneakyThrows
+    void addItem_shouldReturnBadRequest_UserIdHeaderIsNotPresent() {
+        // given
+        ItemRequestDto dto = getItemRequestDto();
+        ItemShortDto item = getItemShortDto();
+        // when
+        when(itemService.addNewItem(any(), anyLong()))
+                .thenReturn(item);
+
+        mvc.perform(post("/items")
+                        .content(mapper.writeValueAsString(dto))
+                        .characterEncoding(StandardCharsets.UTF_8)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                // then
+                .andExpect(status().isBadRequest());
+        verify(itemService, never()).updateItem(any(),anyLong());
+    }
 
     @Test
     @SneakyThrows
-    void updateItem() {
+    void updateItem_shouldUpdateItem_whenRequestIsCorrect() {
         // given
         ItemRequestDto dto = getItemRequestDto();
         ItemShortDto item = getItemShortDto();
@@ -91,10 +110,29 @@ class ItemControllerTest {
         verify(itemService, Mockito.times(1)).updateItem(any(), anyLong());
         verifyNoMoreInteractions(itemService);
     }
+    @Test
+    @SneakyThrows
+    void updateItem_shouldReturnBadRequest_UserIdHeaderIsNotPresent() {
+        // given
+        ItemRequestDto dto = getItemRequestDto();
+        ItemShortDto item = getItemShortDto();
+        // when
+        when(itemService.updateItem(any(), anyLong()))
+                .thenReturn(item);
+
+        mvc.perform(patch("/items/1")
+                        .content(mapper.writeValueAsString(dto))
+                        .characterEncoding(StandardCharsets.UTF_8)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                // then
+                .andExpect(status().isBadRequest());
+        verify(itemService, never()).updateItem(any(), anyLong());
+    }
 
     @Test
     @SneakyThrows
-    void getItemById() {
+    void getItemById_shouldReturnItem_whenRequestIsCorrect() {
         LocalDateTime now = LocalDateTime.now();
         ItemResponseDto responseDto = getItemResponseDto(now);
 
@@ -114,6 +152,21 @@ class ItemControllerTest {
                         jsonPath("$.lastBooking", notNullValue()),
                         jsonPath("$.comments", empty())
                 );
+    }
+    @Test
+    @SneakyThrows
+    void getItemById_shouldReturnBadRequest_whenPathVariableIsNull() {
+        LocalDateTime now = LocalDateTime.now();
+        ItemResponseDto responseDto = getItemResponseDto(now);
+
+        when(itemService.getItemById(anyLong(), anyLong()))
+                .thenReturn(responseDto);
+
+        mvc.perform(get("/items/null")
+                        .header("X-Sharer-User-Id", "1")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+        verify(itemService, never()).getItemById(anyLong(),anyLong());
     }
 
     @Test
@@ -139,22 +192,9 @@ class ItemControllerTest {
                 );
     }
 
-    private static ItemResponseDto getItemResponseDto(LocalDateTime now) {
-        return ItemResponseDto.builder()
-                .id(1L)
-                .name("brush")
-                .description("good brush")
-                .available(true)
-                .nextBooking(getBookingShort(now.plusMinutes(1), now.plusDays(1)))
-                .lastBooking(getBookingShort(now.minusDays(1), now.minusHours(1)))
-                .comments(Collections.emptyList())
-                .build();
-    }
-
     @Test
     @SneakyThrows
     void search() {
-        LocalDateTime now = LocalDateTime.now();
         ItemRequestDto requestDto = getItemRequestDto();
 
         when(itemService.search(any()))
@@ -259,6 +299,18 @@ class ItemControllerTest {
                 .bookerId(1L)
                 .start(start)
                 .end(end)
+                .build();
+    }
+
+    private static ItemResponseDto getItemResponseDto(LocalDateTime now) {
+        return ItemResponseDto.builder()
+                .id(1L)
+                .name("brush")
+                .description("good brush")
+                .available(true)
+                .nextBooking(getBookingShort(now.plusMinutes(1), now.plusDays(1)))
+                .lastBooking(getBookingShort(now.minusDays(1), now.minusHours(1)))
+                .comments(Collections.emptyList())
                 .build();
     }
 }

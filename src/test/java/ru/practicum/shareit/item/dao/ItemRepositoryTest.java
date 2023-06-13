@@ -22,7 +22,7 @@ class ItemRepositoryTest {
     private final ItemRepository repository;
 
     @Test
-    void searchItemsByNameOrDescription_shouldReturnResult() {
+    void searchItemsByNameOrDescription_shouldReturnResult_WhenSearchRequestFound() {
         // given
         User owner = getUser("alex@mail.ru");
         em.persist(owner);
@@ -40,7 +40,7 @@ class ItemRepositoryTest {
     }
 
     @Test
-    void searchItemsByNameOrDescription_shouldEmptyResult() {
+    void searchItemsByNameOrDescription_shouldReturnEmptyResult_WhenSearchRequestNotFound() {
         // given
         User owner = getUser("alex@mail.ru");
         em.persist(owner);
@@ -54,7 +54,7 @@ class ItemRepositoryTest {
     }
 
     @Test
-    void findAllByOwner_Id() {
+    void findAllByOwner_Id_shouldReturnItemList_WhenIdIsCorrect() {
         // given
         User owner = getUser("alex@mail.ru");
         em.persist(owner);
@@ -66,6 +66,20 @@ class ItemRepositoryTest {
         assertThat(result, hasItem(allOf(
                 hasProperty("id", equalTo(item.getId()))
         )));
+    }
+
+    @Test
+    void findAllByOwner_Id_ShouldReturnEmptyList_WhenIdIsInCorrect() {
+        // given
+        User owner = getUser("alex@mail.ru");
+        em.persist(owner);
+        Item item = getItem(owner);
+        em.persist(item);
+        Long incorrectId = owner.getId() + 10;
+        // when
+        List<Item> result = repository.findAllByOwner_Id(incorrectId, Pageable.unpaged());
+        // then
+        assertThat(result, empty());
     }
 
     private static User getUser(String email) {

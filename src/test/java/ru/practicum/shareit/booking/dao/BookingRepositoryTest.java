@@ -15,6 +15,7 @@ import java.util.Optional;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DataJpaTest
 class BookingRepositoryTest {
@@ -24,7 +25,7 @@ class BookingRepositoryTest {
     private BookingRepository repository;
 
     @Test
-    void findBooking() {
+    void findBooking_shouldReturnNotNullBooking() {
         User userOne = getUser("alex@mail.ru");
         User userTwo = getUser("alexa@mail.ru");
         em.persist(userOne);
@@ -36,13 +37,34 @@ class BookingRepositoryTest {
         Booking booking = getBooking(item, userTwo);
         em.persist(booking);
 
-        Booking result = repository.findBooking(booking.getId(), userTwo.getId()).get();
+        Booking result = repository.findBooking(booking.getId(), userTwo.getId()).orElse(null);
 
         assertThat(result, allOf(
                 hasProperty("id", notNullValue()),
                 hasProperty("item", notNullValue()),
                 hasProperty("booker", equalTo(userTwo))
         ));
+    }
+
+    @Test
+    void findBooking_shouldReturnEmptyResult_whenBookingNotFound() {
+        // given
+        User userOne = getUser("alex@mail.ru");
+        User userTwo = getUser("alexa@mail.ru");
+        em.persist(userOne);
+        em.persist(userTwo);
+
+        Item item = getItem(userOne);
+        em.persist(item);
+
+        Booking booking = getBooking(item, userTwo);
+        em.persist(booking);
+
+        Long resultId = booking.getId();
+        // when
+        Optional<Booking> result = repository.findBooking(++resultId, userTwo.getId());
+        // then
+        assertTrue(result.isEmpty());
     }
 
     @Test
