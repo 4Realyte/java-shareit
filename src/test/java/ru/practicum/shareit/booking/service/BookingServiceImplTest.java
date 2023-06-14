@@ -4,6 +4,8 @@ import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.Predicate;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -49,6 +51,8 @@ class BookingServiceImplTest {
     private UserRepository userRepository;
     @InjectMocks
     private BookingServiceImpl bookingService;
+    @Captor
+    private ArgumentCaptor<Predicate> captor;
 
     @Test
     void addBooking_shouldThrowItemNotFoundException() {
@@ -302,6 +306,72 @@ class BookingServiceImplTest {
                 hasProperty("id", equalTo(booking.getId())),
                 hasProperty("booker", instanceOf(UserShortResponseDto.class))
         )));
+    }
+
+    @Test
+    void getAllUserBookings_shouldContainFuturePredicate() {
+        // given
+        Pageable page = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "startDate"));
+        User user = getUser(1L, "peters@mail.ru");
+        Item item = getItem(null, true);
+        Booking booking = getBooking(user, item);
+
+        Page<Booking> bookings = new PageImpl<>(List.of(booking));
+        GetBookingRequest request = GetBookingRequest.of(State.FUTURE, 1L, false, 0, 10);
+        // when
+        when(bookingRepository.findAll(captor.capture(), eq(page)))
+                .thenReturn(bookings);
+        List<BookingResponseDto> result = bookingService.getAllUserBookings(request);
+        // then
+        Predicate value = captor.getValue();
+        assertThat(value, notNullValue());
+        assertThat(value.toString(), containsStringIgnoringCase(
+                String.format("booking.booker.id = %s && booking.startDate >", booking.getId())));
+    }
+
+    @Test
+    void getAllUserBookings_shouldContainCurrentPredicate() {
+        // given
+        Pageable page = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "startDate"));
+        User user = getUser(1L, "peters@mail.ru");
+        Item item = getItem(null, true);
+        Booking booking = getBooking(user, item);
+
+        Page<Booking> bookings = new PageImpl<>(List.of(booking));
+        GetBookingRequest request = GetBookingRequest.of(State.CURRENT, 1L, false, 0, 10);
+        // when
+        when(bookingRepository.findAll(captor.capture(), eq(page)))
+                .thenReturn(bookings);
+        List<BookingResponseDto> result = bookingService.getAllUserBookings(request);
+        // then
+        Predicate value = captor.getValue();
+        assertThat(value, notNullValue());
+        assertThat(value.toString(), allOf(
+                containsStringIgnoringCase(
+                        String.format("booking.booker.id = %s && booking.startDate <=", booking.getId())),
+                containsStringIgnoringCase("booking.endDate >")
+        ));
+    }
+
+    @Test
+    void getAllUserBookings_shouldContainPastPredicate() {
+        // given
+        Pageable page = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "startDate"));
+        User user = getUser(1L, "peters@mail.ru");
+        Item item = getItem(null, true);
+        Booking booking = getBooking(user, item);
+
+        Page<Booking> bookings = new PageImpl<>(List.of(booking));
+        GetBookingRequest request = GetBookingRequest.of(State.PAST, 1L, false, 0, 10);
+        // when
+        when(bookingRepository.findAll(captor.capture(), eq(page)))
+                .thenReturn(bookings);
+        List<BookingResponseDto> result = bookingService.getAllUserBookings(request);
+        // then
+        Predicate value = captor.getValue();
+        assertThat(value, notNullValue());
+        assertThat(value.toString(), containsStringIgnoringCase(
+                String.format("booking.booker.id = %s && booking.endDate <", booking.getId())));
     }
 
     @Test

@@ -10,6 +10,7 @@ import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.model.User;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -99,16 +100,53 @@ class BookingRepositoryTest {
 
         Booking booking = getBooking(item, userTwo);
         em.persist(booking);
-
         // when
         Optional<Booking> result = repository.findBookingByOwner(booking.getId(), userOne.getId());
-
         // then
         assertThat(result, not(equalTo(Optional.empty())));
     }
 
     @Test
-    void findLastBookingByItemId() {
+    void findBookingByOwner_shouldReturnEmptyResult_WhenOwnerIdIncorrect() {
+        // given
+        User userOne = getUser("alex@mail.ru");
+        User userTwo = getUser("alexa@mail.ru");
+        em.persist(userOne);
+        em.persist(userTwo);
+
+        Item item = getItem(userOne);
+        em.persist(item);
+
+        Booking booking = getBooking(item, userTwo);
+        em.persist(booking);
+        // when
+        Optional<Booking> result = repository.findBookingByOwner(booking.getId(), userTwo.getId());
+        // then
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void findBookingByOwner_shouldReturnEmptyResult_WhenBookingIdIncorrect() {
+        // given
+        User userOne = getUser("alex@mail.ru");
+        User userTwo = getUser("alexa@mail.ru");
+        em.persist(userOne);
+        em.persist(userTwo);
+
+        Item item = getItem(userOne);
+        em.persist(item);
+
+        Booking booking = getBooking(item, userTwo);
+        em.persist(booking);
+        // when
+        Optional<Booking> result = repository.findBookingByOwner(100L, userOne.getId());
+        // then
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void findLastBookingByItemId_shouldReturnLastBooking_whenItemIdIsCorrect() {
+        // given
         User userOne = getUser("alex@mail.ru");
         User userTwo = getUser("alexa@mail.ru");
         em.persist(userOne);
@@ -120,17 +158,36 @@ class BookingRepositoryTest {
         Booking booking = getBooking(item, userTwo);
         booking.setStartDate(LocalDateTime.now().minusDays(1L));
         em.persist(booking);
-
+        // when
         Booking nextBooking = repository.findLastBookingByItemId(item.getId(), LocalDateTime.now()).get();
-
+        // then
         assertThat(nextBooking, allOf(
                 hasProperty("id", equalTo(booking.getId()))
         ));
-
     }
 
     @Test
-    void findNextBookingByItemId() {
+    void findLastBookingByItemId_shouldReturnEmptyResult_whenItemIdIsIncorrect() {
+        // given
+        User userOne = getUser("alex@mail.ru");
+        User userTwo = getUser("alexa@mail.ru");
+        em.persist(userOne);
+        em.persist(userTwo);
+
+        Item item = getItem(userOne);
+        em.persist(item);
+
+        Booking booking = getBooking(item, userTwo);
+        booking.setStartDate(LocalDateTime.now().minusDays(1L));
+        em.persist(booking);
+        // when
+        Optional<Booking> nextBooking = repository.findLastBookingByItemId(100L, LocalDateTime.now());
+        // then
+        assertTrue(nextBooking.isEmpty());
+    }
+
+    @Test
+    void findNextBookingByItemId_shouldReturnFutureBooking_whenItemIdIsCorrect() {
         User userOne = getUser("alex@mail.ru");
         User userTwo = getUser("alexa@mail.ru");
         em.persist(userOne);
@@ -150,7 +207,26 @@ class BookingRepositoryTest {
     }
 
     @Test
-    void findFirstByBooker_IdAndItem_IdAndEndDateBefore() {
+    void findNextBookingByItemId_shouldReturnEmptyResult_whenItemIdIsInCorrect() {
+        // given
+        User userOne = getUser("alex@mail.ru");
+        User userTwo = getUser("alexa@mail.ru");
+        em.persist(userOne);
+        em.persist(userTwo);
+
+        Item item = getItem(userOne);
+        em.persist(item);
+
+        Booking booking = getBooking(item, userTwo);
+        em.persist(booking);
+        // when
+        Optional<Booking> nextBooking = repository.findNextBookingByItemId(100L, LocalDateTime.now());
+        // then
+        assertTrue(nextBooking.isEmpty());
+    }
+
+    @Test
+    void findFirstByBooker_IdAndItem_IdAndEndDateBefore_shouldReturnBooking() {
         // given
         LocalDateTime now = LocalDateTime.now();
         User userOne = getUser("alex@mail.ru");
@@ -180,7 +256,29 @@ class BookingRepositoryTest {
     }
 
     @Test
-    void findAllByItem_IdIn() {
+    void findFirstByBooker_IdAndItem_IdAndEndDateBefore_shouldReturnEmptyResult_whenItemIdIncorrect() {
+        // given
+        LocalDateTime now = LocalDateTime.now();
+        User userOne = getUser("alex@mail.ru");
+        User userTwo = getUser("alexa@mail.ru");
+        em.persist(userOne);
+        em.persist(userTwo);
+
+        Item item = getItem(userOne);
+        em.persist(item);
+
+        Booking booking = getBooking(item, userTwo);
+        booking.setEndDate(now.minusHours(1));
+        em.persist(booking);
+        // when
+        Optional<Booking> result = repository.findFirstByBooker_IdAndItem_IdAndEndDateBefore(userTwo.getId(), 100L, now);
+        // then
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void findAllByItem_IdIn_shouldReturnBookings() {
+        // given
         User userOne = getUser("alex@mail.ru");
         User userTwo = getUser("alexa@mail.ru");
         em.persist(userOne);
@@ -191,11 +289,30 @@ class BookingRepositoryTest {
 
         Booking booking = getBooking(item, userTwo);
         em.persist(booking);
-
+        // when
         List<Booking> bookings = repository.findAllByItem_IdIn(List.of(item.getId()));
-
+        // then
         assertThat(bookings, hasSize(1));
         assertThat(bookings, hasItem(booking));
+    }
+
+    @Test
+    void findAllByItem_IdIn_shouldReturnEmptyList_WhenBookingsNotFound() {
+        // given
+        User userOne = getUser("alex@mail.ru");
+        User userTwo = getUser("alexa@mail.ru");
+        em.persist(userOne);
+        em.persist(userTwo);
+
+        Item item = getItem(userOne);
+        em.persist(item);
+
+        Booking booking = getBooking(item, userTwo);
+        em.persist(booking);
+        // when
+        List<Booking> bookings = repository.findAllByItem_IdIn(Collections.emptyList());
+        // then
+        assertThat(bookings, empty());
     }
 
     private static User getUser(String email) {

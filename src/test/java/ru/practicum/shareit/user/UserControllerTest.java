@@ -11,7 +11,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import ru.practicum.shareit.user.dto.UserRequestDto;
-import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.service.UserService;
 
 import java.util.List;
@@ -19,8 +18,7 @@ import java.util.List;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -73,6 +71,22 @@ class UserControllerTest {
 
     @Test
     @SneakyThrows
+    void createUser_BadRequest_WhenEmailIsNull() {
+        // given
+        UserRequestDto requestDto = getUserRequestDto("lexa.ru");
+        requestDto.setEmail(null);
+        // when
+        mvc.perform(MockMvcRequestBuilders.post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(requestDto)))
+                // then
+                .andExpect(status().isBadRequest());
+        verify(userService, never()).saveUser(any());
+    }
+
+    @Test
+    @SneakyThrows
     void createUser_BadRequestWhenNameIsInvalid() {
         // given
         UserRequestDto requestDto = getUserRequestDto("lexa@mail.ru");
@@ -91,7 +105,7 @@ class UserControllerTest {
 
     @Test
     @SneakyThrows
-    void getAllUsers() {
+    void getAllUsers_shouldReturnUsers_whenRequestIsCorrect() {
         // given
         List<UserRequestDto> users = List.of(getUserRequestDto("lexa@mail.ru"),
                 getUserRequestDto("sha@yandex.ru"));
@@ -112,7 +126,7 @@ class UserControllerTest {
 
     @Test
     @SneakyThrows
-    void getUserById() {
+    void getUserById_shouldReturnUser_whenRequestIsCorrect() {
         // given
         UserRequestDto user = getUserRequestDto("sha@yandex.ru");
         // when
@@ -127,6 +141,22 @@ class UserControllerTest {
                         jsonPath("$.name", equalTo(user.getName())),
                         jsonPath("$.email", equalTo(user.getEmail()))
                 );
+    }
+
+    @Test
+    @SneakyThrows
+    void getUserById_shouldReturnBadRequest_PathVarIsNull() {
+        // given
+        UserRequestDto user = getUserRequestDto("sha@yandex.ru");
+        // when
+        when(userService.getUserById(anyLong()))
+                .thenReturn(user);
+
+        mvc.perform(get("/users/null")
+                        .accept(MediaType.APPLICATION_JSON))
+                // then
+                .andExpect(status().isBadRequest());
+        verify(userService, never()).getUserById(anyLong());
     }
 
     @Test
@@ -168,7 +198,7 @@ class UserControllerTest {
 
     @Test
     @SneakyThrows
-    void deleteUser() {
+    void deleteUser_shouldDeleteUser_whenRequestIsCorrect() {
         // when
         mvc.perform(MockMvcRequestBuilders.delete("/users/1")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -180,13 +210,6 @@ class UserControllerTest {
         verify(userService, Mockito.times(1)).deleteUser(anyLong());
     }
 
-    private static User getUser(Long id, String email) {
-        return User.builder()
-                .id(id)
-                .name("Alex")
-                .email(email)
-                .build();
-    }
 
     private static UserRequestDto getUserRequestDto(String email) {
         return UserRequestDto.builder()

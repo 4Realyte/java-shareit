@@ -21,7 +21,7 @@ import java.util.List;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -37,7 +37,7 @@ class BookingControllerTest {
 
     @Test
     @SneakyThrows
-    void addBooking() {
+    void addBooking_shouldAddBookingWhenRequestIsCorrect() {
         BookingRequestDto requestDto = getBookingRequestDto();
         BookingResponseDto responseDto = getBookingResponse();
         // when
@@ -59,6 +59,25 @@ class BookingControllerTest {
                         jsonPath("$.booker.id", is(responseDto.getBooker().getId()), Long.class),
                         jsonPath("$.status", equalTo(responseDto.getStatus().name()))
                 );
+    }
+
+    @Test
+    @SneakyThrows
+    void addBooking_shouldReturnBadRequest_whenUserIdHeaderIsAbsent() {
+        BookingRequestDto requestDto = getBookingRequestDto();
+        BookingResponseDto responseDto = getBookingResponse();
+        // when
+        when(bookingService.addBooking(any(), anyLong()))
+                .thenReturn(responseDto);
+
+        mvc.perform(post("/bookings")
+                        .content(mapper.writeValueAsString(requestDto))
+                        .characterEncoding(StandardCharsets.UTF_8)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                // then
+                .andExpect(status().isBadRequest());
+        verify(bookingService, never()).addBooking(any(), anyLong());
     }
 
     @Test
@@ -85,7 +104,7 @@ class BookingControllerTest {
 
     @Test
     @SneakyThrows
-    void getBookingById() {
+    void getBookingById_shouldReturnBookingWhenRequestIsCorrect() {
         BookingResponseDto responseDto = getBookingResponse();
 
         when(bookingService.getBookingById(anyLong(), anyLong()))
@@ -106,7 +125,22 @@ class BookingControllerTest {
 
     @Test
     @SneakyThrows
-    void approveBooking() {
+    void getBookingById_shouldReturnBadRequest_whenPathVariableIsIncorrect() {
+        BookingResponseDto responseDto = getBookingResponse();
+
+        when(bookingService.getBookingById(anyLong(), anyLong()))
+                .thenReturn(responseDto);
+
+        mvc.perform(get("/bookings/null")
+                        .header("X-Sharer-User-Id", "1")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+        verify(bookingService, never()).getBookingById(anyLong(), anyLong());
+    }
+
+    @Test
+    @SneakyThrows
+    void approveBooking_shouldApproveBookingWhenRequestIsCorrect() {
         BookingResponseDto responseDto = getBookingResponse();
 
         when(bookingService.approveBooking(anyLong(), anyBoolean(), anyLong()))
@@ -124,7 +158,22 @@ class BookingControllerTest {
 
     @Test
     @SneakyThrows
-    void getAllUserBookings() {
+    void approveBooking_shouldReturnBadRequest_whenUserIdHeaderIsAbsent() {
+        BookingResponseDto responseDto = getBookingResponse();
+
+        when(bookingService.approveBooking(anyLong(), anyBoolean(), anyLong()))
+                .thenReturn(responseDto);
+
+        mvc.perform(patch("/bookings/1")
+                        .param("approved", "true")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+        verify(bookingService, never()).approveBooking(anyLong(), anyBoolean(), anyLong());
+    }
+
+    @Test
+    @SneakyThrows
+    void getAllUserBookings_shouldReturnBookingWhenRequestIsCorrect() {
         List<BookingResponseDto> responseDto = List.of(getBookingResponse());
 
         when(bookingService.getAllUserBookings(any()))
@@ -143,7 +192,7 @@ class BookingControllerTest {
 
     @Test
     @SneakyThrows
-    void getAllUserItemBookings() {
+    void getAllUserItemBookings_shouldReturnBookingWhenRequestIsCorrect() {
         List<BookingResponseDto> responseDto = List.of(getBookingResponse());
 
         when(bookingService.getAllUserBookings(any()))

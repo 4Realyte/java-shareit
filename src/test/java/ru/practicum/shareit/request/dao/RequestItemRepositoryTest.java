@@ -23,7 +23,7 @@ class RequestItemRepositoryTest {
     private RequestItemRepository repository;
 
     @Test
-    void findAllByRequestorId() {
+    void findAllByRequestorId_shouldReturnRequests_whenUserIdIsCorrect() {
         // given
         User userOne = getUser("alex@mail.ru");
         User userTwo = getUser("alex@yandex.ru");
@@ -43,14 +43,52 @@ class RequestItemRepositoryTest {
                 hasProperty("requestor", equalTo(userOne)),
                 hasProperty("created", notNullValue())
         )));
-        // when
-        List<RequestItem> requestsTwo = repository.findAllByRequestorId(userTwo.getId());
-        // then
-        assertThat(requestsTwo, empty());
     }
 
     @Test
-    void findAllPaged() {
+    void findAllByRequestorId_shouldReturnEmptyResult_whenUserIdIsInCorrect() {
+        // given
+        User userOne = getUser("alex@mail.ru");
+        User userTwo = getUser("alex@yandex.ru");
+
+        em.persist(userOne);
+        em.persist(userTwo);
+
+        RequestItem requestOne = getRequest(userOne);
+        em.persist(requestOne);
+        Long incorrectId = 1000L;
+        // when
+        List<RequestItem> requests = repository.findAllByRequestorId(incorrectId);
+        // then
+        assertThat(requests, empty());
+    }
+
+    @Test
+    void findAllPaged_shouldReturnRequests_whenUserIsNotRequestor() {
+        // given
+        User userOne = getUser("alex@mail.ru");
+        User userTwo = getUser("alex@yandex.ru");
+
+        em.persist(userOne);
+        em.persist(userTwo);
+
+        RequestItem requestOne = getRequest(userOne);
+        em.persist(requestOne);
+        Pageable page = PageRequest.of(0, 10);
+        // when
+        List<RequestItem> requestsTwo = repository.findAllPaged(page, userTwo.getId()).getContent();
+        // then
+        assertThat(requestsTwo, hasSize(1));
+        assertThat(requestsTwo, hasItem(allOf(
+                hasProperty("description", containsString("some description")),
+                hasProperty("id", equalTo(requestOne.getId())),
+                hasProperty("requestor", equalTo(userOne)),
+                hasProperty("created", notNullValue())
+        )));
+    }
+
+    @Test
+    void findAllPaged_shouldReturnEmptyList_whenUserIsRequestor() {
         // given
         User userOne = getUser("alex@mail.ru");
         User userTwo = getUser("alex@yandex.ru");
@@ -65,17 +103,6 @@ class RequestItemRepositoryTest {
         List<RequestItem> requests = repository.findAllPaged(page, userOne.getId()).getContent();
         // then
         assertThat(requests, empty());
-        // when
-        List<RequestItem> requestsTwo = repository.findAllPaged(page, userTwo.getId()).getContent();
-        // then
-        assertThat(requestsTwo, hasSize(1));
-        assertThat(requestsTwo, hasItem(allOf(
-                hasProperty("description", containsString("some description")),
-                hasProperty("id", equalTo(requestOne.getId())),
-                hasProperty("requestor", equalTo(userOne)),
-                hasProperty("created", notNullValue())
-        )));
-
     }
 
     private static User getUser(String email) {

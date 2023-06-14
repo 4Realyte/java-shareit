@@ -30,10 +30,8 @@ class RequestItemServiceImplTestIT {
     void addNewRequest_shouldCreateRequest() {
         RequestItemDto dto = getRequestDto();
         UserRequestDto firstUser = userService.saveUser(getUserDto("alex@mail.ru"));
-
         // when
         RequestItemDto result = requestItemService.addNewRequest(dto, firstUser.getId());
-
         // then
         assertThat(result, allOf(
                 hasProperty("id", equalTo(result.getId())),
@@ -48,10 +46,8 @@ class RequestItemServiceImplTestIT {
         // given
         UserRequestDto userDto = userService.saveUser(getUserDto("alex@mail.ru"));
         RequestItemDto requestDto = requestItemService.addNewRequest(getRequestDto(), userDto.getId());
-
         // when
         List<RequestItemResponseDto> requests = requestItemService.getRequests(userDto.getId());
-
         // then
         assertThat(requests, hasSize(1));
         assertThat(requests, hasItem(allOf(

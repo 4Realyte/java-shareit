@@ -21,7 +21,7 @@ import java.util.Locale;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -45,9 +45,8 @@ class ItemRequestControllerTest {
 
     @Test
     @SneakyThrows
-    void addNewRequest() {
+    void addNewRequest_shouldAddRequest_whenRequestIsValid() {
         RequestItemDto dto = getRequestDto();
-
         // when
         when(requestItemService.addNewRequest(any(), anyLong()))
                 .thenReturn(dto);
@@ -71,7 +70,6 @@ class ItemRequestControllerTest {
     void addNewRequest_withEmptyDescription() {
         RequestItemDto dto = getRequestDto();
         dto.setDescription("");
-
         // when
         when(requestItemService.addNewRequest(any(), anyLong()))
                 .thenReturn(dto);
@@ -90,10 +88,9 @@ class ItemRequestControllerTest {
 
     @Test
     @SneakyThrows
-    void getRequestById() {
+    void getRequestById_shouldReturnRequest_whenRequestIsValid() {
         // given
         RequestItemResponseDto dto = getResponseDto();
-
         // when
         when(requestItemService.getRequestById(anyLong(), anyLong()))
                 .thenReturn(dto);
@@ -108,6 +105,37 @@ class ItemRequestControllerTest {
                         jsonPath("$.created", notNullValue()),
                         jsonPath("$.items", empty())
                 );
+    }
+
+    @Test
+    @SneakyThrows
+    void getRequestById_shouldReturnBadRequest_whenPathVariableIsIncorrect() {
+        // given
+        RequestItemResponseDto dto = getResponseDto();
+        // when
+        when(requestItemService.getRequestById(anyLong(), anyLong()))
+                .thenReturn(dto);
+        mvc.perform(get("/requests/null")
+                        .header("X-Sharer-User-Id", "1")
+                        .accept(MediaType.APPLICATION_JSON))
+                // then
+                .andExpect(status().isBadRequest());
+        verify(requestItemService, never()).getRequestById(anyLong(), anyLong());
+    }
+
+    @Test
+    @SneakyThrows
+    void getRequestById_shouldReturnBadRequest_whenUserIdHeaderIsAbsent() {
+        // given
+        RequestItemResponseDto dto = getResponseDto();
+        // when
+        when(requestItemService.getRequestById(anyLong(), anyLong()))
+                .thenReturn(dto);
+        mvc.perform(get("/requests/1")
+                        .accept(MediaType.APPLICATION_JSON))
+                // then
+                .andExpect(status().isBadRequest());
+        verify(requestItemService, never()).getRequestById(anyLong(), anyLong());
     }
 
     private static RequestItemResponseDto getResponseDto() {

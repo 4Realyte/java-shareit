@@ -47,22 +47,6 @@ class UserServiceImplTest {
         }
     }
 
-    private static User getUser(Long id, String email) {
-        return User.builder()
-                .id(id)
-                .name("Alex")
-                .email(email)
-                .build();
-    }
-
-    private static UserRequestDto getUserDto(Long id, String email) {
-        return UserRequestDto.builder()
-                .id(id)
-                .name("Alex")
-                .email(email)
-                .build();
-    }
-
     @Test
     void saveUser() {
         // given
@@ -161,5 +145,21 @@ class UserServiceImplTest {
         assertThat(result.getName(), equalTo(user.getName()));
         verify(userRepository, times(1)).findById(anyLong());
         verifyNoMoreInteractions(userRepository);
+    }
+
+    private static User getUser(Long id, String email) {
+        return User.builder()
+                .id(id)
+                .name("Alex")
+                .email(email)
+                .build();
+    }
+
+    private static UserRequestDto getUserDto(Long id, String email) {
+        return UserRequestDto.builder()
+                .id(id)
+                .name("Alex")
+                .email(email)
+                .build();
     }
 }

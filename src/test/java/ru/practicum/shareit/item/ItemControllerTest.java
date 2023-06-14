@@ -61,6 +61,7 @@ class ItemControllerTest {
                         jsonPath("$.requestId", notNullValue())
                 );
     }
+
     @Test
     @SneakyThrows
     void addItem_shouldReturnBadRequest_UserIdHeaderIsNotPresent() {
@@ -78,7 +79,7 @@ class ItemControllerTest {
                         .accept(MediaType.APPLICATION_JSON))
                 // then
                 .andExpect(status().isBadRequest());
-        verify(itemService, never()).updateItem(any(),anyLong());
+        verify(itemService, never()).updateItem(any(), anyLong());
     }
 
     @Test
@@ -110,6 +111,7 @@ class ItemControllerTest {
         verify(itemService, Mockito.times(1)).updateItem(any(), anyLong());
         verifyNoMoreInteractions(itemService);
     }
+
     @Test
     @SneakyThrows
     void updateItem_shouldReturnBadRequest_UserIdHeaderIsNotPresent() {
@@ -153,6 +155,7 @@ class ItemControllerTest {
                         jsonPath("$.comments", empty())
                 );
     }
+
     @Test
     @SneakyThrows
     void getItemById_shouldReturnBadRequest_whenPathVariableIsNull() {
@@ -166,7 +169,7 @@ class ItemControllerTest {
                         .header("X-Sharer-User-Id", "1")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
-        verify(itemService, never()).getItemById(anyLong(),anyLong());
+        verify(itemService, never()).getItemById(anyLong(), anyLong());
     }
 
     @Test
@@ -194,7 +197,7 @@ class ItemControllerTest {
 
     @Test
     @SneakyThrows
-    void search() {
+    void search_shouldReturnItems_whenSearchRequestIsCorrect() {
         ItemRequestDto requestDto = getItemRequestDto();
 
         when(itemService.search(any()))
@@ -216,7 +219,7 @@ class ItemControllerTest {
 
     @Test
     @SneakyThrows
-    void searchCommentsByText() {
+    void searchCommentsByText_shouldReturnComments_whenSearchRequestIsCorrect() {
         CommentResponseDto comment = getCommentResponseDto();
 
         when(itemService.searchCommentsByText(any()))
@@ -238,7 +241,7 @@ class ItemControllerTest {
 
     @Test
     @SneakyThrows
-    void addComment() {
+    void addComment_shouldAddComment_whenRequestIsCorrect() {
         CommentResponseDto comment = getCommentResponseDto();
         CommentRequestDto requestDto = getCommentRequestDto();
 
@@ -257,6 +260,25 @@ class ItemControllerTest {
                         jsonPath("$.authorName", containsString("Alex")),
                         jsonPath("$.created", notNullValue())
                 );
+    }
+
+    @Test
+    @SneakyThrows
+    void addComment_shouldReturnBadRequest_whenTextIsBlank() {
+        CommentResponseDto comment = getCommentResponseDto();
+        CommentRequestDto requestDto = getCommentRequestDto();
+        requestDto.setText("");
+
+        when(itemService.addComment(anyLong(), any(), anyLong()))
+                .thenReturn(comment);
+
+        mvc.perform(post("/items/1/comment")
+                        .header("X-Sharer-User-Id", "1")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(requestDto))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+        verify(itemService, never()).addComment(anyLong(), any(), anyLong());
     }
 
     private static CommentRequestDto getCommentRequestDto() {

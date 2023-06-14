@@ -49,22 +49,6 @@ class RequestItemServiceImplTest {
         requestor = getUser();
     }
 
-    private static User getUser() {
-        return User.builder()
-                .id(1L)
-                .name("Alexandr")
-                .email("alex@mail.ru")
-                .build();
-    }
-
-    private static RequestItemDto getRequestDto() {
-        return RequestItemDto.builder()
-                .id(1L)
-                .description("some description")
-                .created(LocalDateTime.now())
-                .build();
-    }
-
     @Test
     void addNewRequest_shouldThrowUserNotFoundException() {
         // when
@@ -217,5 +201,21 @@ class RequestItemServiceImplTest {
         verify(userRepository, Mockito.times(1)).existsById(1L);
         verify(reqRepo, Mockito.times(1)).findById(1L);
         verifyNoMoreInteractions(userRepository, reqRepo);
+    }
+
+    private static User getUser() {
+        return User.builder()
+                .id(1L)
+                .name("Alexandr")
+                .email("alex@mail.ru")
+                .build();
+    }
+
+    private static RequestItemDto getRequestDto() {
+        return RequestItemDto.builder()
+                .id(1L)
+                .description("some description")
+                .created(LocalDateTime.now())
+                .build();
     }
 }

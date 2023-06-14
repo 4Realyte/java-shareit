@@ -28,7 +28,7 @@ class ItemServiceImplTestIT {
     private final UserService userService;
 
     @Test
-    void getItemById_whenOwner() {
+    void getItemById_whenOwner_shouldReturnItem() {
         // given
         LocalDateTime now = LocalDateTime.now();
         UserRequestDto user = userService.saveUser(getUserDto("lex@mail.ru"));
@@ -141,6 +141,7 @@ class ItemServiceImplTestIT {
         // then
         assertThat(result, empty());
     }
+
     @Test
     void search_shouldReturnEmptyResult_WhenSearchRequestIsEmptyString() {
         // given
@@ -176,6 +177,7 @@ class ItemServiceImplTestIT {
                 hasProperty("created", notNullValue())
         )));
     }
+
     @Test
     void searchCommentsByText_shouldReturnEmptyList_WhenSearchRequestIsEmptyString() {
         // given

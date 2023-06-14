@@ -25,7 +25,7 @@ class UserRepositoryTest {
     private final TestEntityManager em;
 
     @Test
-    void deleteUser() {
+    void deleteUser_shouldDeleteUser_whenIdIsCorrect() {
         // given
         User userOne = getUser("alex@mail.ru");
         User userTwo = getUser("alexa@mail.ru");
@@ -41,6 +41,21 @@ class UserRepositoryTest {
                 hasProperty("id", equalTo(userTwo.getId())),
                 hasProperty("name", equalTo(userTwo.getName()))
         )));
+    }
+
+    @Test
+    void deleteUser_shouldThrowDataAccessException_whenIdIsInCorrect() {
+        // given
+        User userOne = getUser("alex@mail.ru");
+        User userTwo = getUser("alexa@mail.ru");
+        em.persist(userOne);
+        em.persist(userTwo);
+        EntityManager manager = em.getEntityManager();
+        List<User> resultList = manager.createQuery("SELECT u FROM User as u").getResultList();
+        // when + then
+        assertThrows(org.springframework.dao.EmptyResultDataAccessException.class,
+                () -> userRepository.deleteById(100L));
+        assertThat(resultList, hasSize(2));
     }
 
     @Test

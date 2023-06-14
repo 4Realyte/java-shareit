@@ -51,9 +51,17 @@ class BookingServiceImplTestIT {
                 hasProperty("booker", notNullValue()),
                 hasProperty("status", equalTo(BookingStatus.WAITING))
         )));
+    }
+
+    @Test
+    void getAllUserBookings_WhenOwner() {
+        // given
+        UserRequestDto user = userService.saveUser(getUserDto("lex@mail.ru"));
+        UserRequestDto owner = userService.saveUser(getUserDto("lexa@mail.ru"));
+        ItemShortDto item = itemService.addNewItem(getItemDto(), owner.getId());
+        BookingResponseDto booking = bookingService.addBooking(getBookingRequestDto(item.getId()), user.getId());
+        GetBookingRequest request = GetBookingRequest.of(State.CURRENT, owner.getId(), true, 0, 10);
         // when
-        request.setUserId(owner.getId());
-        request.setOwner(true);
         List<BookingResponseDto> ownerResult = bookingService.getAllUserBookings(request);
         // then
         assertThat(ownerResult, hasSize(1));
