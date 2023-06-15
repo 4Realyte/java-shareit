@@ -6,6 +6,7 @@ import ru.practicum.shareit.item.dto.ItemRequestDto;
 import ru.practicum.shareit.item.dto.ItemResponseDto;
 import ru.practicum.shareit.item.dto.ItemShortDto;
 import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.request.model.RequestItem;
 import ru.practicum.shareit.user.model.User;
 
 import java.util.ArrayList;
@@ -36,7 +37,16 @@ public class ItemMapper {
                 .name(item.getName())
                 .description(item.getDescription())
                 .available(item.getAvailable())
+                .requestId(item.getRequest() != null ? item.getRequest().getId() : null)
                 .build();
+    }
+
+    public static List<ItemShortDto> toItemShort(List<Item> items) {
+        List<ItemShortDto> dtos = new ArrayList<>();
+        for (Item item : items) {
+            dtos.add(toItemShort(item));
+        }
+        return dtos;
     }
 
     public static ItemResponseDto toItemResponseDto(Item item, BookingShortDto next, BookingShortDto last) {
@@ -73,12 +83,13 @@ public class ItemMapper {
         return dtos;
     }
 
-    public static Item dtoToItem(ItemRequestDto itemRequestDto, User owner) {
+    public static Item dtoToItem(ItemRequestDto itemRequestDto, User owner, RequestItem request) {
         return Item.builder()
                 .name(itemRequestDto.getName())
                 .description(itemRequestDto.getDescription())
                 .available(itemRequestDto.getAvailable())
                 .owner(owner)
+                .request(request)
                 .build();
     }
 }

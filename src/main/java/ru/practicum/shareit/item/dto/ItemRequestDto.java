@@ -24,4 +24,5 @@ public class ItemRequestDto {
     private String description;
     @NotNull(message = "Поле доступность к аренде должно присутствовать", groups = {NewItem.class})
     private Boolean available;
+    private Long requestId;
 }

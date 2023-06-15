@@ -4,18 +4,15 @@ import lombok.Builder;
 import lombok.Data;
 
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
+import javax.validation.constraints.PastOrPresent;
 import java.time.LocalDateTime;
 
-/**
- * TODO Sprint add-item-requests.
- */
 @Data
 @Builder
-public class ItemRequestDto {
-    private long id;
+public class RequestItemDto {
+    private Long id;
     @NotBlank
-    private String name;
-    @NotNull
+    private String description;
+    @PastOrPresent
     private LocalDateTime created;
 }

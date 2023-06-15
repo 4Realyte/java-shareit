@@ -3,6 +3,8 @@ package ru.practicum.shareit.booking.service;
 import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.Predicate;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -13,6 +15,7 @@ import ru.practicum.shareit.booking.State;
 import ru.practicum.shareit.booking.dao.BookingRepository;
 import ru.practicum.shareit.booking.dto.BookingRequestDto;
 import ru.practicum.shareit.booking.dto.BookingResponseDto;
+import ru.practicum.shareit.booking.dto.GetBookingRequest;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.utils.BookingMapper;
 import ru.practicum.shareit.exception.*;
@@ -81,15 +84,15 @@ public class BookingServiceImpl implements BookingService {
         }
     }
 
-    public List<BookingResponseDto> getAllUserBookings(State state, Long userId, boolean owner) {
+    public List<BookingResponseDto> getAllUserBookings(GetBookingRequest request) {
         List<Predicate> predicates = new ArrayList<>();
         LocalDateTime curTime = LocalDateTime.now();
-        if (owner) {
-            predicates.add(booking.item.owner.id.eq(userId));
+        if (request.isOwner()) {
+            predicates.add(booking.item.owner.id.eq(request.getUserId()));
         } else {
-            predicates.add(booking.booker.id.eq(userId));
+            predicates.add(booking.booker.id.eq(request.getUserId()));
         }
-        switch (state) {
+        switch (request.getState()) {
             case ALL:
                 break;
             case FUTURE:
@@ -111,12 +114,13 @@ public class BookingServiceImpl implements BookingService {
             default:
                 throw new UnknownStateException(State.UNSUPPORTED_STATUS.name());
         }
+        Pageable page = PageRequest.of(request.getFrom(), request.getSize(),
+                Sort.by(Sort.Direction.DESC, "startDate"));
         List<BookingResponseDto> dtos = BookingMapper.toResponseDto(
-                bookingRepository.findAll(ExpressionUtils.allOf(predicates),
-                        Sort.by(Sort.Direction.DESC, "startDate")));
+                bookingRepository.findAll(ExpressionUtils.allOf(predicates), page));
 
         if (dtos.isEmpty())
-            throw new BookingNotFoundException(String.format("Пользователь с id : %s не имеет брони", userId));
+            throw new BookingNotFoundException(String.format("Пользователь с id : %s не имеет брони", request.getUserId()));
 
         return dtos;
     }

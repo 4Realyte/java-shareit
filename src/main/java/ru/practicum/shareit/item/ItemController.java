@@ -9,6 +9,8 @@ import ru.practicum.shareit.item.service.ItemService;
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Positive;
+import javax.validation.constraints.PositiveOrZero;
 import java.util.List;
 
 /**
@@ -17,6 +19,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/items")
 @RequiredArgsConstructor
+@Validated
 public class ItemController {
     private final ItemService itemServiceImpl;
 
@@ -41,20 +44,27 @@ public class ItemController {
     }
 
     @GetMapping
-    public List<ItemResponseDto> getItemsByOwner(@RequestHeader("X-Sharer-User-Id") @NotNull Long userId) {
-        return itemServiceImpl.getItemsByOwner(userId);
+    public List<ItemResponseDto> getItemsByOwner(@RequestHeader("X-Sharer-User-Id") @NotNull Long userId,
+                                                 @RequestParam(required = false, defaultValue = "0") @PositiveOrZero int from,
+                                                 @RequestParam(required = false, defaultValue = "10") @Positive int size) {
+        return itemServiceImpl.getItemsByOwner(userId, from, size);
     }
 
     @GetMapping("/search")
-    public List<ItemRequestDto> search(@RequestParam String text, @RequestHeader("X-Sharer-User-Id") @NotNull Long userId) {
-        return itemServiceImpl.search(text, userId);
+    public List<ItemRequestDto> search(@RequestParam String text,
+                                       @RequestHeader("X-Sharer-User-Id") @NotNull Long userId,
+                                       @RequestParam(required = false, defaultValue = "0") @PositiveOrZero int from,
+                                       @RequestParam(required = false, defaultValue = "10") @Positive int size) {
+        return itemServiceImpl.search(GetSearchItem.of(text, userId, from, size));
     }
 
     @GetMapping("/{itemId}/comment/search")
     public List<CommentResponseDto> searchCommentsByText(@PathVariable Long itemId,
                                                          @RequestHeader("X-Sharer-User-Id") @NotNull Long userId,
-                                                         @RequestParam @NotBlank String text) {
-        return itemServiceImpl.searchCommentsByText(itemId, userId, text);
+                                                         @RequestParam @NotBlank String text,
+                                                         @RequestParam(required = false, defaultValue = "0") @PositiveOrZero int from,
+                                                         @RequestParam(required = false, defaultValue = "10") @Positive int size) {
+        return itemServiceImpl.searchCommentsByText(GetSearchItem.of(text, userId, itemId, from, size));
     }
 
     @PostMapping("/{itemId}/comment")
