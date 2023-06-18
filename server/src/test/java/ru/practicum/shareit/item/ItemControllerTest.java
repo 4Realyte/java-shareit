@@ -262,25 +262,6 @@ class ItemControllerTest {
                 );
     }
 
-    @Test
-    @SneakyThrows
-    void addComment_shouldReturnBadRequest_whenTextIsBlank() {
-        CommentResponseDto comment = getCommentResponseDto();
-        CommentRequestDto requestDto = getCommentRequestDto();
-        requestDto.setText("");
-
-        when(itemService.addComment(anyLong(), any(), anyLong()))
-                .thenReturn(comment);
-
-        mvc.perform(post("/items/1/comment")
-                        .header("X-Sharer-User-Id", "1")
-                        .accept(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(requestDto))
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest());
-        verify(itemService, never()).addComment(anyLong(), any(), anyLong());
-    }
-
     private static CommentRequestDto getCommentRequestDto() {
         return CommentRequestDto.builder()
                 .text("very good")

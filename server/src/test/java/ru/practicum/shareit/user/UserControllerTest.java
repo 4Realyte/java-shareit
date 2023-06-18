@@ -55,56 +55,6 @@ class UserControllerTest {
 
     @Test
     @SneakyThrows
-    void createUser_BadRequestWhenEmailIsInvalid() {
-        // given
-        UserRequestDto requestDto = getUserRequestDto("lexa.ru");
-        // when
-        mvc.perform(MockMvcRequestBuilders.post("/users")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(requestDto)))
-                // then
-                .andExpectAll(
-                        status().isBadRequest()
-                );
-    }
-
-    @Test
-    @SneakyThrows
-    void createUser_BadRequest_WhenEmailIsNull() {
-        // given
-        UserRequestDto requestDto = getUserRequestDto("lexa.ru");
-        requestDto.setEmail(null);
-        // when
-        mvc.perform(MockMvcRequestBuilders.post("/users")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(requestDto)))
-                // then
-                .andExpect(status().isBadRequest());
-        verify(userService, never()).saveUser(any());
-    }
-
-    @Test
-    @SneakyThrows
-    void createUser_BadRequestWhenNameIsInvalid() {
-        // given
-        UserRequestDto requestDto = getUserRequestDto("lexa@mail.ru");
-        requestDto.setName("");
-        // when
-        mvc.perform(MockMvcRequestBuilders.post("/users")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(requestDto)))
-                // then
-                .andExpectAll(
-                        status().isBadRequest(),
-                        content().contentType(MediaType.APPLICATION_JSON)
-                );
-    }
-
-    @Test
-    @SneakyThrows
     void getAllUsers_shouldReturnUsers_whenRequestIsCorrect() {
         // given
         List<UserRequestDto> users = List.of(getUserRequestDto("lexa@mail.ru"),
@@ -157,20 +107,6 @@ class UserControllerTest {
                 // then
                 .andExpect(status().isBadRequest());
         verify(userService, never()).getUserById(anyLong());
-    }
-
-    @Test
-    @SneakyThrows
-    void updateUser_BadRequestWhenEmailIsInvalid() {
-        // given
-        UserRequestDto requestDto = getUserRequestDto("lexa.ru");
-        // when
-        mvc.perform(MockMvcRequestBuilders.patch("/users/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(requestDto)))
-                // then
-                .andExpect(status().isBadRequest());
     }
 
     @Test

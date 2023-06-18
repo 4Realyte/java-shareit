@@ -12,11 +12,9 @@ import ru.practicum.shareit.request.dto.RequestItemDto;
 import ru.practicum.shareit.request.dto.RequestItemResponseDto;
 import ru.practicum.shareit.request.service.RequestItemService;
 
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -34,14 +32,6 @@ class ItemRequestControllerTest {
     private RequestItemService requestItemService;
     @Autowired
     private MockMvc mvc;
-
-    private static RequestItemDto getRequestDto() {
-        return RequestItemDto.builder()
-                .id(1L)
-                .description("some description")
-                .created(LocalDateTime.now())
-                .build();
-    }
 
     @Test
     @SneakyThrows
@@ -63,27 +53,6 @@ class ItemRequestControllerTest {
                         jsonPath("$.description", containsString("some description")),
                         jsonPath("$.created").exists()
                 );
-    }
-
-    @Test
-    @SneakyThrows
-    void addNewRequest_withEmptyDescription() {
-        RequestItemDto dto = getRequestDto();
-        dto.setDescription("");
-        // when
-        when(requestItemService.addNewRequest(any(), anyLong()))
-                .thenReturn(dto);
-
-        mvc.perform(post("/requests")
-                        .content(mapper.writeValueAsString(dto))
-                        .characterEncoding(StandardCharsets.UTF_8)
-                        .locale(Locale.ENGLISH)
-                        .header("X-Sharer-User-Id", "1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON))
-                // then
-                .andExpect(status().isBadRequest())
-                .andDo(h -> System.out.println(h.getResponse().getContentAsString()));
     }
 
     @Test
@@ -138,15 +107,6 @@ class ItemRequestControllerTest {
         verify(requestItemService, never()).getRequestById(anyLong(), anyLong());
     }
 
-    private static RequestItemResponseDto getResponseDto() {
-        return RequestItemResponseDto.builder()
-                .id(1L)
-                .description("some desc")
-                .created(LocalDateTime.now())
-                .items(Collections.emptyList())
-                .build();
-    }
-
     @Test
     @SneakyThrows
     void getAllRequests() {
@@ -195,5 +155,22 @@ class ItemRequestControllerTest {
                         jsonPath("$[0].created", notNullValue()),
                         jsonPath("$[0].items", empty())
                 );
+    }
+
+    private static RequestItemDto getRequestDto() {
+        return RequestItemDto.builder()
+                .id(1L)
+                .description("some description")
+                .created(LocalDateTime.now())
+                .build();
+    }
+
+    private static RequestItemResponseDto getResponseDto() {
+        return RequestItemResponseDto.builder()
+                .id(1L)
+                .description("some desc")
+                .created(LocalDateTime.now())
+                .items(Collections.emptyList())
+                .build();
     }
 }
