@@ -11,8 +11,8 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
     List<Item> findAllByOwner_Id(Long ownerId, Pageable page);
 
     @Query("select i from Item as i " +
-            "where (LCASE(i.name) LIKE LCASE(concat('%',?1, '%')) " +
-            "or LCASE(i.description) LIKE LCASE(concat('%',?1, '%'))) " +
+            "where (LOWER(i.name) LIKE LOWER(concat('%',?1, '%')) " +
+            "or LOWER(i.description) LIKE LOWER(concat('%',?1, '%'))) " +
             "AND i.available = true")
     List<Item> searchItemsByNameOrDescription(String text, Pageable page);
 }

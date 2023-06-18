@@ -15,7 +15,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long>, Queryds
 
     @Query("select c from Comment as c " +
             "JOIN c.item as i " +
-            "where i.id=?1 AND LCASE(c.text) LIKE LCASE(concat('%',?2,'%')) " +
+            "where i.id=?1 AND LOWER(c.text) LIKE LOWER(concat('%',?2,'%')) " +
             "order by c.created DESC")
     List<Comment> searchByText(Long itemId, String text, Pageable page);
 }

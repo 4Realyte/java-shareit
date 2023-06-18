@@ -3,6 +3,7 @@ package ru.practicum.shareit.item.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -95,7 +96,7 @@ public class ItemServiceImpl implements ItemService {
 
     public List<ItemResponseDto> getItemsByOwner(Long ownerId, int from, int size) {
         LocalDateTime cur = LocalDateTime.now();
-        Pageable page = PageRequest.of(from > 0 ? from / size : 0, size);
+        Pageable page = PageRequest.of(from > 0 ? from / size : 0, size, Sort.by(Sort.Direction.ASC, "id"));
         List<Item> items = itemRepository.findAllByOwner_Id(ownerId, page);
         List<Long> ids = items.stream().map(Item::getId).collect(Collectors.toList());
 
@@ -156,6 +157,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
+    @Transactional
     public CommentResponseDto addComment(Long itemId, CommentRequestDto dto, Long userId) {
         Booking booking = bookingRepository.findFirstByBooker_IdAndItem_IdAndEndDateBefore(userId, itemId, LocalDateTime.now())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
